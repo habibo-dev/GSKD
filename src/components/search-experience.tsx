@@ -286,7 +286,7 @@ function ImageSearch() {
             {busy ? "Analyse de l'image en cours…" : "Déposez une photo de la pièce ou de son étiquette"}
           </h3>
           <p className="mx-auto mt-1 max-w-md text-[12.5px] leading-relaxed text-slate-500">
-            Le texte de l'étiquette (référence, marque) est extrait puis recherché dans la base.
+            Le texte de l&apos;étiquette (référence, marque) est extrait puis recherché dans la base.
             Formats : JPEG, PNG, WebP — 10 Mo max.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -316,7 +316,7 @@ function ImageSearch() {
 
         {/* Saisie manuelle / confirmation */}
         <div className="card mt-4 p-4">
-          <label className="label">Référence extraite ou lue sur l'étiquette</label>
+          <label className="label">Référence extraite ou lue sur l&apos;étiquette</label>
           <form
             className="flex gap-2"
             onSubmit={(e) => {
@@ -337,7 +337,7 @@ function ImageSearch() {
           {result && result.candidates.length > 0 && (
             <div className="mt-3">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                Références détectées sur l'image — cliquez pour rechercher
+                Références détectées sur l&apos;image — cliquez pour rechercher
               </div>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {result.candidates.map((c) => (
@@ -393,7 +393,7 @@ function ImageSearch() {
             {result.ok && result.candidates.length === 0 && (
               <p className="mt-2 text-[12px] text-slate-500">
                 Aucune référence détectée sur cette image. Vérifiez la netteté de
-                l'étiquette ou saisissez la référence manuellement ci-contre.
+                l&apos;étiquette ou saisissez la référence manuellement ci-contre.
               </p>
             )}
             {result.texts.length > 0 && (

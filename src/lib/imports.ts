@@ -19,7 +19,7 @@ import {
   type ExtractedRow,
   type TargetField,
 } from "@/lib/excel";
-import { norm, splitReferences } from "@/lib/normalize";
+import { normReference, splitReferences } from "@/lib/normalize";
 import { toNum } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
 
@@ -96,7 +96,7 @@ export async function validateRows(rows: ExtractedRow[]) {
     reference: string;
     designation: string;
   }>) {
-    const key = norm(r.token);
+    const key = normReference(r.token);
     if (!byToken.has(key)) {
       byToken.set(key, {
         id: r.id,
@@ -159,7 +159,7 @@ export async function validateRows(rows: ExtractedRow[]) {
     // Doublon dans le fichier ?
     let duplicateOf: number | null = null;
     for (const t of tokens) {
-      const k = norm(t);
+      const k = normReference(t);
       const firstRow = seenInFile.get(k);
       if (firstRow !== undefined) {
         duplicateOf = firstRow;
@@ -173,10 +173,10 @@ export async function validateRows(rows: ExtractedRow[]) {
         message: `Référence déjà présente (ligne ${duplicateOf})`,
       });
     } else {
-      for (const t of tokens) seenInFile.set(norm(t), row.rowNumber);
+      for (const t of tokens) seenInFile.set(normReference(t), row.rowNumber);
       // Existant en base ?
       for (const t of tokens) {
-        const found = byToken.get(norm(t));
+        const found = byToken.get(normReference(t));
         if (found) {
           existingPart = found;
           break;
@@ -333,9 +333,9 @@ export async function executeImport(
           .select()
           .from(partReferences)
           .where(eq(partReferences.partId, partId));
-        const existingKeys = new Set(existingRefs.map((r) => norm(r.reference)));
+        const existingKeys = new Set(existingRefs.map((r) => normReference(r.reference)));
         for (const token of row.tokens) {
-          if (!existingKeys.has(norm(token))) {
+          if (!existingKeys.has(normReference(token))) {
             await tx.insert(partReferences).values({
               partId,
               reference: token,

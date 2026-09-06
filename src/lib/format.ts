@@ -61,6 +61,7 @@ export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   entree: "Entrée",
   vente: "Vente",
   retour: "Retour",
+  sortie: "Sortie",
   ajustement_pos: "Ajustement +",
   ajustement_neg: "Ajustement −",
 };

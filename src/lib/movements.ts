@@ -13,6 +13,7 @@ export type MovementType =
   | "entree"
   | "vente"
   | "retour"
+  | "sortie"
   | "ajustement_pos"
   | "ajustement_neg";
 
@@ -21,6 +22,7 @@ const DIRECTION: Record<MovementType, 1 | -1> = {
   retour: 1,
   ajustement_pos: 1,
   vente: -1,
+  sortie: -1,
   ajustement_neg: -1,
 };
 
@@ -123,7 +125,7 @@ export async function recomputePartStock(tx: Tx, partId: number) {
   const agg = await tx.execute(sql`
     SELECT
       COALESCE(SUM(CASE WHEN type IN ('entree','retour','ajustement_pos') THEN quantity ELSE 0 END), 0) AS ins,
-      COALESCE(SUM(CASE WHEN type IN ('vente','ajustement_neg') THEN quantity ELSE 0 END), 0) AS outs,
+      COALESCE(SUM(CASE WHEN type IN ('vente','sortie','ajustement_neg') THEN quantity ELSE 0 END), 0) AS outs,
       COALESCE(SUM(CASE WHEN type = 'vente' THEN quantity ELSE 0 END), 0) AS sold
     FROM stock_movements WHERE part_id = ${partId}
   `);

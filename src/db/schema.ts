@@ -217,7 +217,7 @@ export const stockMovements = pgTable(
       onDelete: "set null",
     }),
     partReference: text("part_reference"), // instantané
-    // entree | vente | retour | ajustement_pos | ajustement_neg
+    // entree | vente | retour | sortie | ajustement_pos | ajustement_neg
     type: text("type").notNull(),
     quantity: numeric("quantity", { precision: 14, scale: 3 }).notNull(),
     previousStock: numeric("previous_stock", { precision: 14, scale: 3 })

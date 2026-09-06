@@ -10,7 +10,7 @@ export default function NotFound() {
         </span>
         <h2 className="mt-4 text-xl font-bold text-slate-800">Page introuvable</h2>
         <p className="mt-1 text-[13px] text-slate-500">
-          La page ou la pièce demandée n'existe pas (ou a été supprimée).
+          La page ou la pièce demandée n&apos;existe pas (ou a été supprimée).
         </p>
         <div className="mt-5 flex justify-center gap-2">
           <Link href="/" className="btn btn-primary btn-sm">Tableau de bord</Link>

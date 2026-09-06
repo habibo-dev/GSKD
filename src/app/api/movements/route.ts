@@ -6,7 +6,7 @@ import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED: MovementType[] = ["entree", "retour", "ajustement_pos", "ajustement_neg"];
+const ALLOWED: MovementType[] = ["entree", "retour", "sortie", "ajustement_pos", "ajustement_neg"];
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;

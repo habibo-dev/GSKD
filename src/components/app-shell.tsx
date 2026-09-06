@@ -142,15 +142,13 @@ function GlobalSearch() {
     };
   }, []);
 
+  const term = q.trim();
+  const canSearch = term.length >= 2;
+
   useEffect(() => {
-    const term = q.trim();
-    if (term.length < 2) {
-      setHits([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
+    if (!canSearch) return;
     const t = setTimeout(async () => {
+      setLoading(true);
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(term)}&limit=7`);
         const data = (await res.json()) as { results: SearchHit[] };
@@ -163,14 +161,17 @@ function GlobalSearch() {
       }
     }, 180);
     return () => clearTimeout(t);
-  }, [q]);
+  }, [canSearch, term]);
 
   const goSearch = () => {
-    if (q.trim()) {
+    if (term) {
       setOpen(false);
-      router.push(`/recherche?q=${encodeURIComponent(q.trim())}`);
+      router.push(`/recherche?q=${encodeURIComponent(term)}`);
     }
   };
+
+  const visibleHits = canSearch ? hits : [];
+  const visibleLoading = canSearch && loading;
 
   return (
     <div ref={boxRef} className="relative w-full max-w-xl">
@@ -182,10 +183,10 @@ function GlobalSearch() {
         ref={inputRef}
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        onFocus={() => hits.length && setOpen(true)}
+        onFocus={() => visibleHits.length && setOpen(true)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            if (hits.length > 0) {
+            if (visibleHits.length > 0) {
               setOpen(false);
               router.push(`/pieces/${hits[0].id}`);
             } else {
@@ -199,9 +200,9 @@ function GlobalSearch() {
       <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">
         Entrée ↵
       </kbd>
-      {open && hits.length > 0 && (
+      {open && visibleHits.length > 0 && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-          {hits.map((h) => (
+          {visibleHits.map((h) => (
             <button
               key={h.id}
               onMouseDown={(e) => {
@@ -246,7 +247,7 @@ function GlobalSearch() {
           </button>
         </div>
       )}
-      {loading && (
+      {visibleLoading && (
         <div className="absolute right-12 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
       )}
     </div>
@@ -257,13 +258,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  const closeMobile = () => setMobileOpen(false);
 
   const sidebar = (
     <aside className="app-sidebar flex h-full w-[248px] flex-col bg-[#0b1220] text-slate-300">
-      <Link href="/" className="flex items-center gap-2.5 px-5 pb-5 pt-5">
+      <Link href="/" onClick={closeMobile} className="flex items-center gap-2.5 px-5 pb-5 pt-5">
         <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-950/50">
           <Gauge size={19} strokeWidth={2.2} />
         </span>
@@ -289,6 +288,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={closeMobile}
                   className={`relative mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors ${
                     active
                       ? "bg-white/10 text-white"

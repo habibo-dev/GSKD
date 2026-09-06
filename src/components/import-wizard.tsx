@@ -215,7 +215,7 @@ export function ImportWizard() {
             </h3>
             <p className="mx-auto mt-1 max-w-md text-[12.5px] leading-relaxed text-slate-500">
               Formats .xls / .xlsx — les colonnes attendues sont
-              Référence, Désignation, Marque, Quantité, Prix d'Achat, Prix Gros,
+              Référence, Désignation, Marque, Quantité, Prix d&apos;Achat, Prix Gros,
               Prix Détail, UM, Rayon. Les références multiples
               (« 7703800107 / 8200651172 ») sont prises en charge.
             </p>
@@ -260,7 +260,7 @@ export function ImportWizard() {
               </select>
             </div>
             <div>
-              <label className="label">Ligne d'en-tête (dans le fichier)</label>
+              <label className="label">Ligne d&apos;en-tête (dans le fichier)</label>
               <select className="select" value={headerRow} onChange={(e) => setHeaderRow(Number(e.target.value))}>
                 {Array.from({ length: 8 }, (_, i) => (
                   <option key={i} value={i}>
@@ -366,7 +366,7 @@ export function ImportWizard() {
                   <thead>
                     <tr>
                       <th>Ligne</th><th>Référence</th><th>Désignation</th><th>Marque</th>
-                      <th className="num">Qté</th><th className="num">Prix d'Achat</th>
+                      <th className="num">Qté</th><th className="num">Prix d&apos;Achat</th>
                       <th className="num">Prix Gros</th><th className="num">Prix Détail</th><th>UM</th><th>Rayon</th>
                     </tr>
                   </thead>
@@ -463,7 +463,7 @@ export function ImportWizard() {
               disabled={busy || validation.summary.ok + validation.summary.existants === 0}
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <CircleCheck size={14} />}
-              Lancer l'import ({validation.summary.ok + (policy === "update" ? validation.summary.existants : 0)} ligne(s))
+              Lancer l&apos;import ({validation.summary.ok + (policy === "update" ? validation.summary.existants : 0)} ligne(s))
             </button>
           </div>
         </div>

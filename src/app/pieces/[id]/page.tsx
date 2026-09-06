@@ -78,6 +78,14 @@ export default async function PartDetailPage({
             partId={part.id}
             reference={part.reference}
             currentStock={restant}
+            mode="sortie"
+            defaultUser={cfg.defaultUser}
+            className="btn btn-secondary btn-sm"
+          />
+          <AdjustStockButton
+            partId={part.id}
+            reference={part.reference}
+            currentStock={restant}
             mode="ajustement"
             defaultUser={cfg.defaultUser}
             className="btn btn-secondary btn-sm"
@@ -134,7 +142,7 @@ export default async function PartDetailPage({
               <p className="text-[12px] leading-relaxed text-slate-500">
                 Aucune compatibilité vérifiée enregistrée. Ajoutez des
                 correspondances lorsque les données constructeur / fournisseur
-                sont disponibles — aucune compatibilité n'est supposée.
+                sont disponibles — aucune compatibilité n&apos;est supposée.
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
@@ -189,7 +197,7 @@ export default async function PartDetailPage({
                 </div>
                 {part.referenceRaw && (
                   <div className="mt-1.5 text-[11px] text-slate-400">
-                    Valeur d'origine du fichier Excel : <span className="mono">{part.referenceRaw}</span>
+                    Valeur d&apos;origine du fichier Excel : <span className="mono">{part.referenceRaw}</span>
                   </div>
                 )}
               </div>
@@ -210,7 +218,7 @@ export default async function PartDetailPage({
             <h3 className="mb-3 text-[13px] font-bold text-slate-800">Tarification</h3>
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Prix d'Achat</div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Prix d&apos;Achat</div>
                 <div className="mono mt-0.5 text-lg font-bold text-slate-700">
                   {formatDZD(part.purchasePrice, cfg.currencySuffix)}
                 </div>
@@ -236,10 +244,12 @@ export default async function PartDetailPage({
               <h3 className="text-[13px] font-bold text-slate-800">Stock — Stock restant = Stock initial + Entrées − Sorties</h3>
               <StockBadge status={status} />
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
               {stat("Stock initial", formatQty(part.initialStock))}
-              {stat("Entrées (+ retours)", formatQty(aggregates.entrees + aggregates.retours))}
+              {stat("Entrées (+ retours)", formatQty(aggregates.entrees + aggregates.retours), "text-emerald-800")}
               {stat("Vendus", formatQty(aggregates.vendus), "text-blue-800")}
+              {stat("Sorties", formatQty(aggregates.sorties), "text-amber-800")}
+              {stat("Ajustements", formatQty(aggregates.ajustementsPos - aggregates.ajustementsNeg), "text-violet-800")}
               {stat("Stock restant", formatQty(restant), status === "rupture" ? "text-rose-700" : status === "faible" ? "text-amber-700" : "text-emerald-700")}
             </div>
             <div className="mono mt-2.5 text-[11.5px] text-slate-400">
@@ -286,7 +296,7 @@ export default async function PartDetailPage({
                         <td className="whitespace-nowrap text-slate-500">{formatDateTime(m.createdAt)}</td>
                         <td><MovementsBadge type={m.type} /></td>
                         <td className="num font-bold">
-                          {m.type === "vente" || m.type === "ajustement_neg" ? "−" : "+"}
+                          {m.type === "vente" || m.type === "sortie" || m.type === "ajustement_neg" ? "−" : "+"}
                           {formatQty(m.quantity)}
                         </td>
                         <td className="num mono text-slate-500">{formatQty(m.previousStock)}</td>

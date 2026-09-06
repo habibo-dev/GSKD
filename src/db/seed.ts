@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // ---------------------------------------------------------------------------
 // Données de DÉMONSTRATION — inventaire de pièces automobiles.
 // Ce jeu de données est clairement séparé (lot d'import « demo ») et peut être
