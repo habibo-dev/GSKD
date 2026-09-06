@@ -148,7 +148,7 @@ export function PartForm({
           <h3 className="mb-4 text-[13px] font-bold text-slate-800">Tarification (DA)</h3>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="label">Prix d&apos;Achat</label>
+              <label className="label">Prix d'Achat</label>
               <input className="input num mono" inputMode="decimal" placeholder="0,00" value={form.purchasePrice} onChange={(e) => isNumberField(e.target.value) && set("purchasePrice")(e as never)} />
             </div>
             <div>

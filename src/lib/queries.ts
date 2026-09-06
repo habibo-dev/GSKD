@@ -14,7 +14,7 @@ import {
   importBatches,
 } from "@/db/schema";
 import { eq, desc, ilike, or, asc, sql, and, gte, lte, type SQL } from "drizzle-orm";
-import { queryWords, norm, normReference } from "@/lib/normalize";
+import { queryWords, norm } from "@/lib/normalize";
 import { stockStatusOf, toNum, type StockStatus } from "@/lib/format";
 
 // ---------------------------------------------------------------------------
@@ -85,31 +85,14 @@ function textFilter(q: string, defaultMinStock: number): SQL | undefined {
   void defaultMinStock;
   const clauses: SQL[] = words.map((w) => {
     const like = `%${w}%`;
-    const refLike = `%${normReference(w)}%`;
-    // La référence normalisée permet de trouver "7703800107" même si la
-    // donnée d'origine contient des points / espaces parasites.
     return sql`(
       parts.reference ILIKE ${like}
-      OR regexp_replace(parts.reference, '[^A-Za-z0-9]', '', 'g') ILIKE ${refLike}
-      OR EXISTS (SELECT 1 FROM part_references r WHERE r.part_id = parts.id AND (
-        r.reference ILIKE ${like}
-        OR regexp_replace(r.reference, '[^A-Za-z0-9]', '', 'g') ILIKE ${refLike}
-      ))
+      OR EXISTS (SELECT 1 FROM part_references r WHERE r.part_id = parts.id AND r.reference ILIKE ${like})
       OR parts.designation ILIKE ${like}
       OR parts.description ILIKE ${like}
       OR parts.location ILIKE ${like}
       OR EXISTS (SELECT 1 FROM brands b WHERE b.id = parts.brand_id AND b.name ILIKE ${like})
       OR EXISTS (SELECT 1 FROM categories c WHERE c.id = parts.category_id AND c.name ILIKE ${like})
-      /* Compatibilité véhicules : recherche par marque, modèle, moteur, carburant */
-      OR EXISTS (
-        SELECT 1 FROM compatibilities cp
-        JOIN vehicles v ON v.id = cp.vehicle_id
-        WHERE cp.part_id = parts.id AND (
-          v.brand ILIKE ${like} OR v.model ILIKE ${like}
-          OR v.engine ILIKE ${like} OR v.fuel ILIKE ${like}
-          OR coalesce(v.notes, '') ILIKE ${like}
-        )
-      )
     )`;
   });
   return and(...clauses);
@@ -270,7 +253,6 @@ export async function getPartDetail(id: number) {
       COALESCE(SUM(CASE WHEN type = 'entree' THEN quantity ELSE 0 END), 0) AS entrees,
       COALESCE(SUM(CASE WHEN type = 'retour' THEN quantity ELSE 0 END), 0) AS retours,
       COALESCE(SUM(CASE WHEN type = 'vente' THEN quantity ELSE 0 END), 0) AS vendus,
-      COALESCE(SUM(CASE WHEN type = 'sortie' THEN quantity ELSE 0 END), 0) AS sorties,
       COALESCE(SUM(CASE WHEN type = 'ajustement_pos' THEN quantity ELSE 0 END), 0) AS aj_pos,
       COALESCE(SUM(CASE WHEN type = 'ajustement_neg' THEN quantity ELSE 0 END), 0) AS aj_neg
     FROM stock_movements WHERE part_id = ${id}
@@ -311,7 +293,6 @@ export async function getPartDetail(id: number) {
     entrees: string;
     retours: string;
     vendus: string;
-    sorties: string;
     aj_pos: string;
     aj_neg: string;
   };
@@ -323,7 +304,6 @@ export async function getPartDetail(id: number) {
       entrees: toNum(a.entrees),
       retours: toNum(a.retours),
       vendus: toNum(a.vendus),
-      sorties: toNum(a.sorties),
       ajustementsPos: toNum(a.aj_pos),
       ajustementsNeg: toNum(a.aj_neg),
     },
@@ -438,13 +418,11 @@ export async function listRayons(): Promise<string[]> {
 // Mouvements / Ventes pour les pages listes
 // ---------------------------------------------------------------------------
 export async function listMovements(opts: {
-  partId?: number;
   type?: string;
   q?: string;
   limit?: number;
 }) {
   const clauses: SQL[] = [];
-  if (opts.partId) clauses.push(eq(stockMovements.partId, opts.partId));
   if (opts.type) clauses.push(eq(stockMovements.type, opts.type));
   if (opts.q) {
     const like = `%${norm(opts.q)}%`;
@@ -470,7 +448,6 @@ export async function listMovements(opts: {
       partId: stockMovements.partId,
       partReference: stockMovements.partReference,
       designation: parts.designation,
-      saleId: stockMovements.saleId,
     })
     .from(stockMovements)
     .leftJoin(parts, eq(stockMovements.partId, parts.id))

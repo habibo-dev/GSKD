@@ -52,7 +52,7 @@ export default async function CataloguePage({
             Catalogue — Liste des Articles au Prix de Vente
           </h2>
           <p className="mt-0.5 text-[13px] text-slate-500">
-            {total} article{total > 1 ? "s" : ""} · Édition du {formatDate(new Date())} · Présentable aux clients (aucun prix d&apos;achat affiché)
+            {total} article{total > 1 ? "s" : ""} · Édition du {formatDate(new Date())} · Présentable aux clients (aucun prix d'achat affiché)
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

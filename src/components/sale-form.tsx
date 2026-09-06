@@ -61,20 +61,6 @@ export function SaleForm({
   const [done, setDone] = useState<{ number: string; total: number } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const term = q.trim();
-  const canSearch = term.length >= 2;
-
-  const addLine = (part: Found) => {
-    setLines((ls) => {
-      if (ls.some((l) => l.part.id === part.id)) return ls;
-      return [...ls, { part, quantity: "1", priceType: "detail" }];
-    });
-    setQ("");
-    setHits([]);
-    searchRef.current?.focus();
-    setError(null);
-  };
-
   // Pré-remplissage via /ventes/nouvelle?part=<id>
   useEffect(() => {
     if (!presetPartId) return;
@@ -97,12 +83,17 @@ export function SaleForm({
         });
       })
       .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetPartId]);
 
   useEffect(() => {
-    if (!canSearch) return;
+    const term = q.trim();
+    if (term.length < 2) {
+      setHits([]);
+      return;
+    }
+    setSearching(true);
     const t = setTimeout(async () => {
-      setSearching(true);
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(term)}&limit=7`);
         const data = (await res.json()) as { results: Found[] };
@@ -112,10 +103,18 @@ export function SaleForm({
       }
     }, 170);
     return () => clearTimeout(t);
-  }, [canSearch, term]);
+  }, [q]);
 
-  const visibleHits = canSearch ? hits : [];
-  const visibleSearching = canSearch && searching;
+  const addLine = (part: Found) => {
+    setLines((ls) => {
+      if (ls.some((l) => l.part.id === part.id)) return ls;
+      return [...ls, { part, quantity: "1", priceType: "detail" }];
+    });
+    setQ("");
+    setHits([]);
+    searchRef.current?.focus();
+    setError(null);
+  };
 
   const updateLine = (id: number, patch: Partial<Line>) =>
     setLines((ls) => ls.map((l) => (l.part.id === id ? { ...l, ...patch } : l)));
@@ -210,11 +209,11 @@ export function SaleForm({
               className="input h-10 pl-9"
               autoFocus
             />
-            {visibleSearching && <Loader2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-blue-600" />}
+            {searching && <Loader2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-blue-600" />}
           </div>
-          {visibleHits.length > 0 && (
+          {hits.length > 0 && (
             <div className="mt-2 overflow-hidden rounded-lg border border-slate-200">
-              {visibleHits.map((h) => (
+              {hits.map((h) => (
                 <button
                   key={h.id}
                   onClick={() => addLine(h)}

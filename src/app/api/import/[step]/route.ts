@@ -7,7 +7,6 @@ import {
   validateRows,
   executeImport,
 } from "@/lib/imports";
-import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +23,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   if (badParams(step)) {
     return NextResponse.json({ error: "Étape inconnue." }, { status: 404 });
   }
-  const forbidden = await requireAdmin(req);
-  if (forbidden) return forbidden;
 
   // Étape 1 : téléversement + analyse du classeur
   if (step === "preview") {
@@ -37,19 +34,19 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (file.size > MAX_SIZE) {
       return NextResponse.json({ error: "Fichier trop volumineux (15 Mo max)." }, { status: 400 });
     }
-    if (!/\.(xlsx?|xlsm|xlsb|csv)$/i.test(file.name)) {
+    if (!/\.(xlsx?|xlsm|xlsb)$/i.test(file.name)) {
       return NextResponse.json(
-        { error: "Format non pris en charge : utilisez un classeur .xls / .xlsx ou un fichier .csv." },
+        { error: "Format non pris en charge : utilisez un classeur .xls ou .xlsx." },
         { status: 400 },
       );
     }
     const buffer = Buffer.from(await file.arrayBuffer());
     let sheets;
     try {
-      sheets = analyzeWorkbook(buffer, file.name);
+      sheets = analyzeWorkbook(buffer);
     } catch {
       return NextResponse.json(
-        { error: "Impossible de lire ce classeur. Vérifiez qu'il s'agit bien d'un fichier Excel ou CSV." },
+        { error: "Impossible de lire ce classeur. Vérifiez qu'il s'agit bien d'un fichier Excel." },
         { status: 400 },
       );
     }
@@ -96,13 +93,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   }
 
   if (step === "validate") {
-    const rows = extractRows(
-      stored.buffer,
-      body.sheet,
-      body.headerRow,
-      body.mapping,
-      stored.filename,
-    );
+    const rows = extractRows(stored.buffer, body.sheet, body.headerRow, body.mapping);
     const { validated, summary } = await validateRows(rows);
     const problemRows = validated
       .filter((r) => r.status !== "ok")

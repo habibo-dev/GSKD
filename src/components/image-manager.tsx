@@ -117,7 +117,7 @@ export function ImageManager({
           {currentImage && (
             <button className="btn btn-ghost w-full text-rose-600 hover:bg-rose-50" disabled={busy} onClick={remove}>
               <Trash2 size={14} />
-              Supprimer l&apos;image
+              Supprimer l'image
             </button>
           )}
         </div>

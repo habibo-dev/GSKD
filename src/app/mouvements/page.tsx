@@ -12,7 +12,6 @@ const TYPES = [
   ["entree", "Entrées"],
   ["vente", "Ventes"],
   ["retour", "Retours"],
-  ["sortie", "Sorties"],
   ["ajustement_pos", "Ajustements +"],
   ["ajustement_neg", "Ajustements −"],
 ] as const;
@@ -98,7 +97,7 @@ export default async function MouvementsPage({
                     </td>
                     <td><MovementsBadge type={m.type} /></td>
                     <td className="num font-bold">
-                      {m.type === "vente" || m.type === "sortie" || m.type === "ajustement_neg" ? "−" : "+"}
+                      {m.type === "vente" || m.type === "ajustement_neg" ? "−" : "+"}
                       {formatQty(m.quantity)}
                     </td>
                     <td className="num mono text-slate-500">{formatQty(m.previousStock)}</td>

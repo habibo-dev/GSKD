@@ -190,7 +190,7 @@ export default async function DashboardPage() {
                         <MovementsBadge type={m.type} />
                       </td>
                       <td className="num font-semibold">
-                        {m.type === "vente" || m.type === "sortie" || m.type === "ajustement_neg" ? "−" : "+"}
+                        {m.type === "vente" || m.type === "ajustement_neg" ? "−" : "+"}
                         {formatQty(m.quantity)}
                       </td>
                       <td className="num mono text-slate-600">{formatQty(m.newStock)}</td>

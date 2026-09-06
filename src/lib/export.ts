@@ -27,8 +27,7 @@ const HEADERS_STOCK = [
   "UM",
   "Stock initial",
   "Entrées",
-  "Sorties",
-  "Dont ventes",
+  "Vendus",
   "Stock restant",
   "Stock minimum",
   "Statut",
@@ -58,13 +57,12 @@ async function stockRows(filters: PartFilters) {
   const agg = await db.execute(sql`
     SELECT part_id,
       COALESCE(SUM(CASE WHEN type IN ('entree','retour','ajustement_pos') THEN quantity ELSE 0 END), 0) AS entrees,
-      COALESCE(SUM(CASE WHEN type IN ('vente','sortie','ajustement_neg') THEN quantity ELSE 0 END), 0) AS sorties,
       COALESCE(SUM(CASE WHEN type = 'vente' THEN quantity ELSE 0 END), 0) AS vendus
     FROM stock_movements GROUP BY part_id
   `);
-  const byId = new Map<number, { entrees: string; sorties: string; vendus: string }>();
-  for (const r of agg.rows as Array<{ part_id: number; entrees: string; sorties: string; vendus: string }>) {
-    byId.set(r.part_id, { entrees: r.entrees, sorties: r.sorties, vendus: r.vendus });
+  const byId = new Map<number, { entrees: string; vendus: string }>();
+  for (const r of agg.rows as Array<{ part_id: number; entrees: string; vendus: string }>) {
+    byId.set(r.part_id, { entrees: r.entrees, vendus: r.vendus });
   }
   const allRefs = await db.select().from(partReferences);
   const refsByPart = new Map<number, string[]>();
@@ -85,7 +83,6 @@ async function stockRows(filters: PartFilters) {
       r.unit,
       toNum(r.initialStock),
       toNum(a?.entrees ?? 0),
-      toNum(a?.sorties ?? 0),
       toNum(a?.vendus ?? 0),
       toNum(r.currentStock),
       toNum(r.minStock),
@@ -141,7 +138,7 @@ export async function buildExport(
     if (type === "ruptures") f.status = "rupture";
     const aoa: (string | number)[][] = [HEADERS_STOCK, ...(await stockRows(f))];
     return {
-      buffer: bookFromAoa(aoa, [16, 24, 38, 14, 14, 8, 6, 12, 10, 10, 12, 12, 12, 12, 12, 12, 12]),
+      buffer: bookFromAoa(aoa, [16, 24, 38, 14, 14, 8, 6, 12, 10, 10, 12, 12, 12, 12, 12, 12]),
       filename: `${type}-${stamp}.xlsx`,
     };
   }
@@ -191,7 +188,7 @@ export async function buildExport(
       r.createdAt ? new Date(r.createdAt).toLocaleString("fr-FR") : "",
       r.partReference ?? "",
       r.designation ?? "",
-      ({ entree: "Entrée", vente: "Vente", retour: "Retour", sortie: "Sortie", ajustement_pos: "Ajustement +", ajustement_neg: "Ajustement -" } as Record<string, string>)[r.type] ?? r.type,
+      ({ entree: "Entrée", vente: "Vente", retour: "Retour", ajustement_pos: "Ajustement +", ajustement_neg: "Ajustement -" } as Record<string, string>)[r.type] ?? r.type,
       toNum(r.quantity),
       toNum(r.previousStock),
       toNum(r.newStock),
