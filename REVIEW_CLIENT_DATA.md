@@ -5,7 +5,7 @@ Base de validation : `data/Liste-des-Articles-samedi-11-04-2026-.csv` + `data/Li
 
 ## 1. Inventaire CSV / XLS
 
-- Fichiers présents dans `data/` et maintenant suivis dans la branche de livraison.
+- Fichiers présents localement dans `data/` (non commités : données client sensibles, ignorées par `.gitignore`).
 - CSV : 142 lignes, 0 référence vide, 0 désignation vide, 0 quantité invalide.
 - XLS : même contenu (142 lignes), mêmes colonnes (`Référence`, `Désignation`, `Marque`, `Quantité`, `Prix d'Achat`, `Prix Gros`, `Prix Détail`, `UM`, `Rayon`).
 - Import du CSV réel : **138 pièces créées**, 0 mise à jour, **4 doublons détectés**, 0 invalide.
