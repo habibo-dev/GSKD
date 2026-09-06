@@ -56,7 +56,9 @@ réelles » :
 - Le choix retenu est **Vercel** (ou un équivalent serverless avec PostgreSQL
   managé). Le projet contient maintenant `vercel.json`.
 - Bloqué par : absence de `VERCEL_TOKEN`, absence de CLI Vercel, `gh secret
-  list` renvoyant 403, aucun accès à un projet Vercel existant.
+  list` renvoyant 403, aucun accès à un projet Vercel existant, et accès HTTPS
+  sortant du sandbox vers Vercel/services de tunnel bloqué
+  (`SSL_ERROR_SYSCALL`).
 
 ### URL de démonstration locale (aperçu)
 
@@ -280,12 +282,15 @@ npm run test
 ### Production / Vercel
 
 1. Créer un projet Vercel et le lier au dépôt `habibo-dev/GSKD`.
-2. Configurer les variables d'environnement :
+2. Configurer les variables d'environnement (voir `.env.example` — la valeur
+   locale `pglite://…` est volontairement commentée, **ne pas** la déployer sur
+   Vercel) :
    - `DATABASE_URL=postgres://...` (Neon, Supabase, Railway…)
    - `AUTH_SECRET=...` (`openssl rand -base64 32`)
    - `ADMIN_USERNAME=admin`
    - `ADMIN_PASSWORD=...`
-3. Le buildCommand de `vercel.json` exécute `npm run db:setup && npm run build`.
+3. Le buildCommand de `vercel.json` exécute `npm run db:setup && npm run build`
+   et échouera si `DATABASE_URL` est absent (comportement voulu).
 4. Récupérer l'URL de déploiement Vercel et la mettre comme URL de production.
 
 ### Charger les données réelles du client
