@@ -14,6 +14,7 @@ type Settings = {
   allowNegativeStock: boolean;
   defaultUser: string;
   cataloguePrice: "detail" | "gros";
+  authEnabled: boolean;
 };
 
 export function SettingsForm({ initial }: { initial: Settings }) {
@@ -73,7 +74,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
           <h3 className="mb-3 text-[13px] font-bold text-slate-800">Entreprise & catalogue</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Nom de l'entreprise</label>
+              <label className="label">Nom de l&apos;entreprise</label>
               <input className="input" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
             </div>
             <div>
@@ -129,7 +130,18 @@ export function SettingsForm({ initial }: { initial: Settings }) {
                 <span className="block text-[13px] font-bold text-slate-800">Autoriser le stock négatif</span>
                 <span className="block text-[11.5px] leading-snug text-slate-500">
                   Par défaut, vendre plus que le stock disponible est bloqué. Activez
-                  uniquement si votre pratique l'exige (déconseillé).
+                  uniquement si votre pratique l&apos;exige (déconseillé).
+                </span>
+              </span>
+            </label>
+            <label className="col-span-2 flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 p-3">
+              <input type="checkbox" className="mt-0.5" checked={form.authEnabled} onChange={(e) => setForm({ ...form, authEnabled: e.target.checked })} />
+              <span>
+                <span className="block text-[13px] font-bold text-slate-800">Sécurité multi-utilisateurs (Admin / Employé)</span>
+                <span className="block text-[11.5px] leading-snug text-slate-500">
+                  Si activée, les modifications sensibles (prix, import, ajustements,
+                  suppression, paramètres) nécessitent une session administrateur.
+                  Compte initial admin/admin (à changer en production via AUTH_SECRET/DATABASE).
                 </span>
               </span>
             </label>
@@ -156,7 +168,7 @@ export function SettingsForm({ initial }: { initial: Settings }) {
           </h3>
           <p className="mt-2 text-[12.5px] leading-relaxed text-slate-500">
             Supprime <strong>toutes</strong> les pièces, références, images,
-            mouvements, ventes, véhicules, compatibilités et lots d'import. Utile
+            mouvements, ventes, véhicules, compatibilités et lots d&apos;import. Utile
             pour retirer les données de démonstration avant la mise en
             production. <strong>Action irréversible.</strong>
           </p>

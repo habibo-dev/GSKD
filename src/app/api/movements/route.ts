@@ -3,14 +3,17 @@ import { db } from "@/db";
 import { applyStockChange, StockError, type MovementType } from "@/lib/movements";
 import { listMovements } from "@/lib/queries";
 import { getSettings } from "@/lib/settings";
+import { getAuthUser, isAuthEnabled, requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const ALLOWED: MovementType[] = ["entree", "retour", "ajustement_pos", "ajustement_neg"];
+const ALLOWED: MovementType[] = ["entree", "retour", "sortie", "ajustement_pos", "ajustement_neg"];
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
+  const partId = Number(sp.get("partId"));
   const rows = await listMovements({
+    partId: Number.isInteger(partId) ? partId : undefined,
     type: sp.get("type") ?? undefined,
     q: sp.get("q") ?? undefined,
     limit: Number(sp.get("limit")) || 120,
@@ -19,6 +22,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -43,14 +49,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Quantité invalide." }, { status: 400 });
   }
 
-  const cfg = await getSettings();
+  const [cfg, authEnabled, user] = await Promise.all([
+    getSettings(),
+    isAuthEnabled(),
+    getAuthUser(),
+  ]);
+  const userName = authEnabled
+    ? user?.name ?? cfg.defaultUser
+    : String(body.userName ?? "").trim() || cfg.defaultUser;
+
   try {
     const result = await db.transaction(async (tx) =>
       applyStockChange(tx, {
         partId,
         type,
         quantity: Math.round(quantity * 1000) / 1000,
-        userName: String(body.userName ?? "").trim() || cfg.defaultUser,
+        userName: userName,
         reason: String(body.reason ?? "").trim() || null,
         documentRef: String(body.documentRef ?? "").trim() || null,
         allowNegative: cfg.allowNegativeStock,

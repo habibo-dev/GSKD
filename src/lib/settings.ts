@@ -12,6 +12,7 @@ export type AppSettings = {
   allowNegativeStock: boolean;
   defaultUser: string;
   cataloguePrice: "detail" | "gros";
+  authEnabled: boolean;
 };
 
 const DEFAULTS: AppSettings = {
@@ -24,6 +25,7 @@ const DEFAULTS: AppSettings = {
   allowNegativeStock: false,
   defaultUser: "Employé",
   cataloguePrice: "detail",
+  authEnabled: false,
 };
 
 export async function getSettings(): Promise<AppSettings> {
@@ -45,6 +47,7 @@ export async function getSettings(): Promise<AppSettings> {
     defaultUser: (get("defaultUser") as string) ?? DEFAULTS.defaultUser,
     cataloguePrice:
       get("cataloguePrice") === "gros" ? "gros" : ("detail" as const),
+    authEnabled: get("authEnabled") === "true",
   };
 }
 

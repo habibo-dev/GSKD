@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { compatibilities, parts, vehicles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { listCompatibilities } from "@/lib/queries";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -42,6 +46,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   const id = Number(req.nextUrl.searchParams.get("id"));
   if (!Number.isInteger(id)) {
     return NextResponse.json({ error: "ID invalide." }, { status: 400 });

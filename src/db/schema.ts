@@ -16,6 +16,9 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   role: text("role").notNull().default("employe"),
+  username: text("username"),
+  passwordHash: text("password_hash"),
+  active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: false })
     .notNull()
     .defaultNow(),
@@ -116,6 +119,7 @@ export const parts = pgTable(
   },
   (t) => [
     index("parts_reference_idx").on(t.reference),
+    index("parts_reference_lower_idx").on(t.reference),
     index("parts_designation_idx").on(t.designation),
     index("parts_location_idx").on(t.location),
     index("parts_brand_idx").on(t.brandId),
@@ -140,6 +144,7 @@ export const partReferences = pgTable(
   },
   (t) => [
     index("part_references_ref_idx").on(t.reference),
+    index("part_references_ref_lower_idx").on(t.reference),
     index("part_references_part_idx").on(t.partId),
   ],
 );
@@ -217,7 +222,7 @@ export const stockMovements = pgTable(
       onDelete: "set null",
     }),
     partReference: text("part_reference"), // instantané
-    // entree | vente | retour | ajustement_pos | ajustement_neg
+    // entree | vente | retour | sortie | ajustement_pos | ajustement_neg
     type: text("type").notNull(),
     quantity: numeric("quantity", { precision: 14, scale: 3 }).notNull(),
     previousStock: numeric("previous_stock", { precision: 14, scale: 3 })

@@ -119,6 +119,37 @@ function gridRows(ws: XLSX.WorkSheet): string[][] {
   );
 }
 
+/** Détecte un fichier CSV (utilisé pour l'import de l'inventaire converti). */
+export function isCsvFile(filename: string): boolean {
+  return /\.csv$/i.test(filename || "");
+}
+
+/** Décode un buffer CSV en s'adaptant à l'encodage français courant. */
+function csvText(buffer: Buffer): string {
+  const utf8 = buffer.toString("utf8");
+  // Évite les caractères de remplacement si le fichier est en cp1252/latin1.
+  if (utf8.includes("\uFFFD")) {
+    return buffer.toString("latin1");
+  }
+  return utf8;
+}
+
+/**
+ * Lit un classeur Excel (.xls / .xlsx / .xlsm / .xlsb) ou un CSV.
+ * `filename` est optionnel pour garantir la compatibilité avec les appels
+ * hérités ; le type est alors auto-détecté.
+ */
+export function readWorkbook(
+  buffer: Buffer,
+  filename?: string,
+): XLSX.WorkBook {
+  if (filename && isCsvFile(filename)) {
+    const text = csvText(buffer).replace(/^\uFEFF/, "");
+    return XLSX.read(text, { type: "string", raw: true });
+  }
+  return XLSX.read(buffer, { type: "buffer" });
+}
+
 /** Score d'une ligne comme ligne d'en-tête, selon les alias connus. */
 function headerScore(cells: string[]): number {
   let score = 0;
@@ -161,8 +192,8 @@ function autoMap(columns: string[]): {
 }
 
 /** Analyse un classeur : feuilles, colonnes détectées, mapping automatique. */
-export function analyzeWorkbook(buffer: Buffer): SheetInfo[] {
-  const wb = XLSX.read(buffer, { type: "buffer" });
+export function analyzeWorkbook(buffer: Buffer, filename?: string): SheetInfo[] {
+  const wb = readWorkbook(buffer, filename);
   const infos: SheetInfo[] = [];
   for (const name of wb.SheetNames) {
     const ws = wb.Sheets[name];
@@ -228,8 +259,9 @@ export function extractRows(
   sheetName: string,
   headerRow: number,
   mapping: Partial<Record<TargetField, string>>,
+  filename?: string,
 ): ExtractedRow[] {
-  const wb = XLSX.read(buffer, { type: "buffer" });
+  const wb = readWorkbook(buffer, filename);
   const ws = wb.Sheets[sheetName];
   if (!ws) throw new Error("Feuille introuvable dans le classeur.");
   const rows = gridRows(ws);

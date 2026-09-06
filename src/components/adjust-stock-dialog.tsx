@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDownToDot, RotateCcw, Wrench, X, Loader2 } from "lucide-react";
+import { ArrowDownToDot, ArrowUpRight, RotateCcw, Wrench, X, Loader2 } from "lucide-react";
 
-type Mode = "entree" | "retour" | "ajustement";
+type Mode = "entree" | "sortie" | "retour" | "ajustement";
 
 const MODE_CONFIG: Record<
   Mode,
@@ -15,6 +15,12 @@ const MODE_CONFIG: Record<
     button: "Entrée",
     hint: "Réapprovisionnement fournisseur : la quantité est ajoutée au stock.",
     icon: ArrowDownToDot,
+  },
+  sortie: {
+    title: "Enregistrer une sortie",
+    button: "Sortie",
+    hint: "Sortie de magasin (prélèvement, pièce mise de côté, départ atelier…) : la quantité est retirée du stock et tracée.",
+    icon: ArrowUpRight,
   },
   retour: {
     title: "Enregistrer un retour",
@@ -69,11 +75,13 @@ export function AdjustStockButton({
     const type =
       mode === "entree"
         ? "entree"
-        : mode === "retour"
-          ? "retour"
-          : sign === "pos"
-            ? "ajustement_pos"
-            : "ajustement_neg";
+        : mode === "sortie"
+          ? "sortie"
+          : mode === "retour"
+            ? "retour"
+            : sign === "pos"
+              ? "ajustement_pos"
+              : "ajustement_neg";
     setBusy(true);
     setError(null);
     try {
@@ -106,11 +114,12 @@ export function AdjustStockButton({
     }
   };
 
+  const qty = Number(quantity.replace(",", "."));
   const newStock =
-    Number(quantity.replace(",", ".")) > 0
+    qty > 0
       ? currentStock +
-        (mode === "ajustement" && sign === "neg" ? -1 : 1) *
-          Number(quantity.replace(",", "."))
+        (mode === "ajustement" && sign === "neg" || mode === "sortie" ? -1 : 1) *
+          qty
       : null;
 
   return (
@@ -160,7 +169,7 @@ export function AdjustStockButton({
               </div>
               {mode === "ajustement" && (
                 <div className="col-span-2">
-                  <label className="label">Sens de l'ajustement</label>
+                  <label className="label">Sens de l&apos;ajustement</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSale, StockError, type SaleLineInput } from "@/lib/movements";
 import { listSales } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,20 @@ export async function GET() {
   return NextResponse.json({ sales: rows });
 }
 
+export async function PATCH() {
+  return NextResponse.json(
+    {
+      error: "Annulation de vente non disponible : utilisez un mouvement de réapprovisionnement ou de correction explicite pour préserver l'audit.",
+      code: "NOT_IMPLEMENTED",
+    },
+    { status: 400 },
+  );
+}
+
 export async function POST(req: NextRequest) {
+  const forbidden = await requireAuth(req);
+  if (forbidden) return forbidden;
+
   let body: {
     clientName?: string;
     userName?: string;
