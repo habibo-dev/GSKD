@@ -18,7 +18,11 @@ export async function PATCH(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Corps invalide." }, { status: 400 });
   }
-  const min = Number(String(body.defaultMinStock ?? "").replace(",", "."));
+  const minRaw = body.defaultMinStock;
+  const min =
+    minRaw === undefined || String(minRaw).trim() === ""
+      ? Number.NaN
+      : Number(String(minRaw).replace(",", "."));
   await saveSettings({
     businessName: String(body.businessName ?? "").trim().slice(0, 80) || undefined,
     tagline: String(body.tagline ?? "").trim().slice(0, 120) || undefined,

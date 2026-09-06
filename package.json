@@ -7,9 +7,14 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "bash scripts/smoke-test.sh",
+    "db:setup": "tsx src/db/setup.ts",
+    "db:seed": "npm run db:setup && tsx src/db/seed.ts",
+    "data:load": "tsx scripts/load-client-data.ts",
     "pdf:extract": "tsx scripts/extract-pdf-catalogue.ts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@napi-rs/canvas": "^1.0.8",
     "dotenv": "17.3.1",
     "drizzle-orm": "0.45.2",

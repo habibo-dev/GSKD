@@ -19,7 +19,10 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 }
 
 const num = (v: unknown, fallback: number | null = null): string | null => {
-  const n = Number(String(v ?? "").replace(",", "."));
+  if (v === undefined || v === null || String(v).trim() === "") {
+    return fallback === null ? null : String(fallback);
+  }
+  const n = Number(String(v).replace(",", "."));
   if (!Number.isFinite(n) || n < 0) return fallback === null ? null : String(fallback);
   return String(n);
 };

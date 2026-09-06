@@ -11,7 +11,9 @@ const ALLOWED: MovementType[] = ["entree", "retour", "sortie", "ajustement_pos",
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
+  const partId = Number(sp.get("partId"));
   const rows = await listMovements({
+    partId: Number.isInteger(partId) ? partId : undefined,
     type: sp.get("type") ?? undefined,
     q: sp.get("q") ?? undefined,
     limit: Number(sp.get("limit")) || 120,

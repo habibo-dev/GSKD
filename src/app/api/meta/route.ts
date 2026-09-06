@@ -8,6 +8,7 @@ import {
   listSuppliers,
   listVehicles,
 } from "@/lib/queries";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   let body: { entity?: string; name?: string; phone?: string; email?: string; notes?: string };
   try {
     body = await req.json();

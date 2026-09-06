@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSale, StockError, type SaleLineInput } from "@/lib/movements";
 import { listSales } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,9 @@ export async function PATCH() {
 }
 
 export async function POST(req: NextRequest) {
+  const forbidden = await requireAuth(req);
+  if (forbidden) return forbidden;
+
   let body: {
     clientName?: string;
     userName?: string;

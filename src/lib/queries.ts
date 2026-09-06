@@ -438,11 +438,13 @@ export async function listRayons(): Promise<string[]> {
 // Mouvements / Ventes pour les pages listes
 // ---------------------------------------------------------------------------
 export async function listMovements(opts: {
+  partId?: number;
   type?: string;
   q?: string;
   limit?: number;
 }) {
   const clauses: SQL[] = [];
+  if (opts.partId) clauses.push(eq(stockMovements.partId, opts.partId));
   if (opts.type) clauses.push(eq(stockMovements.type, opts.type));
   if (opts.q) {
     const like = `%${norm(opts.q)}%`;
@@ -468,6 +470,7 @@ export async function listMovements(opts: {
       partId: stockMovements.partId,
       partReference: stockMovements.partReference,
       designation: parts.designation,
+      saleId: stockMovements.saleId,
     })
     .from(stockMovements)
     .leftJoin(parts, eq(stockMovements.partId, parts.id))

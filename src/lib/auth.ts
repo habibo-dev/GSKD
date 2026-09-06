@@ -15,10 +15,9 @@
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual, randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { eq, sql } from "drizzle-orm";
+import { db, pool, pglite } from "@/db";
 import { users } from "@/db/schema";
-import { sql } from "drizzle-orm";
 import { getSettings } from "@/lib/settings";
 
 export type Role = "admin" | "employe";
@@ -140,6 +139,19 @@ export async function isAuthEnabled(): Promise<boolean> {
   return cfg.authEnabled;
 }
 
+/** Vrai si la sécurité est activée ET l'utilisateur est connecté (admin ou employé). */
+export async function requireAuth(req: NextRequest): Promise<NextResponse | null> {
+  if (!(await isAuthEnabled())) return null;
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Authentification requise." },
+      { status: 401 },
+    );
+  }
+  return null;
+}
+
 /** Vrai si la sécurité est activée ET l'utilisateur est admin. */
 export async function requireAdmin(req: NextRequest): Promise<NextResponse | null> {
   if (!(await isAuthEnabled())) return null;
@@ -174,19 +186,35 @@ export async function login(username: string, password: string): Promise<AuthUse
 }
 
 /**
+ * Exécute un lot de commandes SQL idempotentes.
+ * PGlite refuse les « prepared statements » multi-commandes : on utilise donc
+ * `pglite.exec` (ou `pool.query` pour PostgreSQL) qui accepte plusieurs
+ * instructions séparées par des points-virgules.
+ */
+async function runBatchSql(sqlText: string): Promise<void> {
+  if (pglite) {
+    await pglite.exec(sqlText);
+  } else if (pool) {
+    await pool.query(sqlText);
+  } else {
+    await db.execute(sql.raw(sqlText));
+  }
+}
+
+/**
  * Bootstrap idempotent (appelé par les routes d'authentification) :
  * ajoute les colonnes si elles manquent, crée les index et garantit un admin.
  */
 export async function ensureAuthReady(): Promise<void> {
   if (ready) return;
   try {
-    await db.execute(sql`
+    await runBatchSql(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS username text;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS active boolean NOT NULL DEFAULT true;
       CREATE UNIQUE INDEX IF NOT EXISTS users_username_idx ON users(lower(username));
     `);
-    await db.execute(sql`
+    await runBatchSql(`
       CREATE INDEX IF NOT EXISTS part_references_ref_lower_idx ON part_references(lower(reference));
       CREATE INDEX IF NOT EXISTS parts_reference_lower_idx ON parts(lower(reference));
       CREATE INDEX IF NOT EXISTS stock_movements_part_date_idx ON stock_movements(part_id, created_at DESC);
