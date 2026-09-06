@@ -85,16 +85,22 @@ Toutes les pages/API principales :
 - Tester « 7703800107 / 8200651172 » comme **une seule pièce recherchable par l'une ou l'autre référence**.
 - AUCUNE données de compatibilité véhicule ne doit être inventée ; il n'y en a pas dans les fichiers fournis (à confirmer).
 
-### 2. Ajouté / renforcé dans cette passe (pipeline « sortie » + recherche)
+### 2. Ajouté / renforcé dans cette passe (pipeline « sortie » + recherche + extraction PDF)
 - ✅ Nouveau type de mouvement **`SORTIE`** (sortie de magasin, distincte de la vente) :
   - `src/lib/movements.ts`, `src/lib/format.ts`, `src/lib/export.ts`, `/api/movements`, badge UI, bouton « Sortie » sur Stock et fiche produit.
 - ✅ Recherche **compatibilité véhicule** (`Clio`, `1.5 dCi`, `Peugeot`, etc.) via `compatibilities`/`vehicles`.
 - ✅ Normalisation des références (`normReference`) pour comparer `7703800107` vs `.7703800107`, espaces, tirets, slash.
 - ✅ Import : les doublons / existants sont désormais comparés sur la référence **normalisée** (plus robuste face aux points de tête, espaces, casse).
+- ✅ **Outillage d'extraction du catalogue PDF** (`scripts/extract-pdf-catalogue.ts`) :
+  - Rendu des pages via `pdfjs-dist` + `@napi-rs/canvas`.
+  - OCR local (`tesseract.js`) pour retrouver les lignes.
+  - Découpe de la zone « Photo » et génération d'un répertoire de revue (`data/pdf-extract/products/`).
+  - Sortie `matches.json` / `matches.csv` avec statut `manual_review` : aucune association n'est inventée.
 
 ### 3. À faire dès que les fichiers sont fournis (et tester)
+- Exécuter `npm run pdf:extract -- <ArticlePVPhoto.pdf>` sur le **vrai** PDF, puis calibrer la zone photo selon la mise en page réelle (`--photo-x/--photo-w`).
 - Pipeline PDF → images : extraire la grille `N° / Référence / Désignation / Prix Vente / Photo / Marque`, cropper la photo, associer par référence à la pièce, marquer les lignes non identifiées pour revue manuelle (jamais d'association aléatoire).
-- Écran d'import PDF avec **revue manuelle** avant écriture.
+- Écran d'import PDF avec **revue manuelle** avant écriture (à implémenter après calibration du script sur le vrai fichier).
 - Import initial Excel depuis le vrai fichier (ou fichier normalisé) sans doublons.
 - Tests d'acceptation complets (voir section 24 du cahier des charges).
 
