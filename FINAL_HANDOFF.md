@@ -2,7 +2,7 @@
 
 Date : 2026-09-06
 Branche : `arena/01a076c2-gskd`
-Dernier commit : `85b684e`
+Dernier commit : `b46d346`
 
 ---
 
@@ -40,8 +40,9 @@ réelles » :
 ## 3. Dernier commit / branche
 
 - Branch : `arena/01a076c2-gskd`
-- Latest commit : `85b684e`
-- Message : `Add PGlite demo DB, schema bootstrap, smoke tests, data loader, auth fixes, production config`
+- Latest commit : `b46d346`
+- Message : `Add FINAL_HANDOFF.md with production status and next-agent handoff`
+  (commit précécent contenant le code : `85b684e`)
 
 ---
 
@@ -344,4 +345,4 @@ DATABASE_URL=postgres://... npm run pdf:extract -- "data/ArticlePVPhoto.pdf 13 0
 **Production URL** : aucune (BLOCKED).
 **Repo** : `https://github.com/habibo-dev/GSKD`
 **Branche** : `arena/01a076c2-gskd`
-**Dernier commit** : `85b684e`
+**Dernier commit** : `b46d346`
