@@ -1,10 +1,9 @@
-import { ArrowDownToDot, ArrowUpFromDot, ArrowUpRight, RotateCcw, ShoppingCart, Wrench } from "lucide-react";
+import { ArrowDownToDot, ArrowUpFromDot, RotateCcw, ShoppingCart, Wrench } from "lucide-react";
 
 const CONFIG: Record<string, { label: string; cls: string }> = {
   entree: { label: "Entrée", cls: "badge-emerald" },
   vente: { label: "Vente", cls: "badge-blue" },
   retour: { label: "Retour", cls: "badge-violet" },
-  sortie: { label: "Sortie", cls: "badge-amber" },
   ajustement_pos: { label: "Ajustement +", cls: "badge-amber" },
   ajustement_neg: { label: "Ajustement −", cls: "badge-rose" },
 };
@@ -13,7 +12,6 @@ const ICONS: Record<string, typeof ArrowDownToDot> = {
   entree: ArrowDownToDot,
   vente: ShoppingCart,
   retour: RotateCcw,
-  sortie: ArrowUpRight,
   ajustement_pos: Wrench,
   ajustement_neg: Wrench,
 };

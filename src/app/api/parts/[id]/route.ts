@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { parts, partReferences, brands, categories, suppliers } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { splitReferences, norm, normReference } from "@/lib/normalize";
+import { splitReferences, norm } from "@/lib/normalize";
 import { deletePartImage } from "@/lib/images";
-import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -19,18 +18,12 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 }
 
 const num = (v: unknown, fallback: number | null = null): string | null => {
-  if (v === undefined || v === null || String(v).trim() === "") {
-    return fallback === null ? null : String(fallback);
-  }
-  const n = Number(String(v).replace(",", "."));
+  const n = Number(String(v ?? "").replace(",", "."));
   if (!Number.isFinite(n) || n < 0) return fallback === null ? null : String(fallback);
   return String(n);
 };
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
-  const forbidden = await requireAdmin(req);
-  if (forbidden) return forbidden;
-
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id)) return NextResponse.json({ error: "ID invalide" }, { status: 400 });
 
@@ -98,9 +91,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   // Synchronise les références (conserve l'historique des jetons existants)
   const refs = await db.select().from(partReferences).where(eq(partReferences.partId, id));
-  const existingKeys = new Set(refs.map((r) => normReference(r.reference)));
+  const existingKeys = new Set(refs.map((r) => norm(r.reference)));
   for (const [i, token] of tokens.entries()) {
-    if (!existingKeys.has(normReference(token))) {
+    if (!existingKeys.has(norm(token))) {
       await db.insert(partReferences).values({ partId: id, reference: token, isPrimary: i === 0 && !refs.some((r) => r.isPrimary) });
     }
   }
@@ -108,10 +101,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(req: NextRequest, ctx: Ctx) {
-  const forbidden = await requireAdmin(req);
-  if (forbidden) return forbidden;
-
+export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id)) return NextResponse.json({ error: "ID invalide" }, { status: 400 });
   const [existing] = await db.select().from(parts).where(eq(parts.id, id));

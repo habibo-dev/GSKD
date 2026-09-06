@@ -13,7 +13,6 @@ export type MovementType =
   | "entree"
   | "vente"
   | "retour"
-  | "sortie"
   | "ajustement_pos"
   | "ajustement_neg";
 
@@ -22,7 +21,6 @@ const DIRECTION: Record<MovementType, 1 | -1> = {
   retour: 1,
   ajustement_pos: 1,
   vente: -1,
-  sortie: -1,
   ajustement_neg: -1,
 };
 
@@ -103,19 +101,14 @@ export async function applyStockChange(
     })
     .returning();
 
-  const soldNow = toNum(row.sold_quantity);
-  const nextSold =
-    input.type === "vente"
-      ? soldNow + input.quantity
-      : input.type === "retour"
-        ? Math.max(0, soldNow - input.quantity)
-        : soldNow;
-
   await tx
     .update(parts)
     .set({
       currentStock: String(next),
-      soldQuantity: String(nextSold),
+      soldQuantity:
+        input.type === "vente"
+          ? String(toNum(row.sold_quantity) + input.quantity)
+          : row.sold_quantity,
       updatedAt: new Date(),
     })
     .where(eq(parts.id, input.partId));
@@ -130,28 +123,21 @@ export async function recomputePartStock(tx: Tx, partId: number) {
   const agg = await tx.execute(sql`
     SELECT
       COALESCE(SUM(CASE WHEN type IN ('entree','retour','ajustement_pos') THEN quantity ELSE 0 END), 0) AS ins,
-      COALESCE(SUM(CASE WHEN type IN ('vente','sortie','ajustement_neg') THEN quantity ELSE 0 END), 0) AS outs,
-      COALESCE(SUM(CASE WHEN type = 'vente' THEN quantity ELSE 0 END), 0) AS vendu,
-      COALESCE(SUM(CASE WHEN type = 'retour' THEN quantity ELSE 0 END), 0) AS retourne
+      COALESCE(SUM(CASE WHEN type IN ('vente','ajustement_neg') THEN quantity ELSE 0 END), 0) AS outs,
+      COALESCE(SUM(CASE WHEN type = 'vente' THEN quantity ELSE 0 END), 0) AS sold
     FROM stock_movements WHERE part_id = ${partId}
   `);
-  const a = agg.rows[0] as {
-    ins: string;
-    outs: string;
-    vendu: string;
-    retourne: string;
-  };
+  const a = agg.rows[0] as { ins: string; outs: string; sold: string };
   const current = toNum(part.initialStock) + toNum(a.ins) - toNum(a.outs);
-  const sold = Math.max(0, toNum(a.vendu) - toNum(a.retourne));
   await tx
     .update(parts)
     .set({
       currentStock: String(current),
-      soldQuantity: String(sold),
+      soldQuantity: a.sold,
       updatedAt: new Date(),
     })
     .where(eq(parts.id, partId));
-  return { currentStock: current, soldQuantity: sold };
+  return { currentStock: current, soldQuantity: toNum(a.sold) };
 }
 
 export type SaleLineInput = {

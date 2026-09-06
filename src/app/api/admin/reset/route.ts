@@ -4,15 +4,11 @@ import path from "path";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { PARTS_DIR } from "@/lib/images";
-import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 /** Purge complète des données (démonstration / remise à zéro avant production). */
 export async function POST(req: NextRequest) {
-  const forbidden = await requireAdmin(req);
-  if (forbidden) return forbidden;
-
   let body: { confirm?: string };
   try {
     body = await req.json();

@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { parts, partReferences, brands, categories } from "@/db/schema";
-import { eq, or } from "drizzle-orm";
-import { sql } from "drizzle-orm";
-import { splitReferences, normReference } from "@/lib/normalize";
+import { eq } from "drizzle-orm";
+import { splitReferences } from "@/lib/normalize";
 import { getSettings } from "@/lib/settings";
 import { listParts, type PartFilters } from "@/lib/queries";
 import { imageUrl } from "@/lib/images";
 import { stockStatusOf, toNum, type StockStatus } from "@/lib/format";
-import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -65,9 +63,6 @@ async function ensureNamed(
 }
 
 export async function POST(req: NextRequest) {
-  const forbidden = await requireAdmin(req);
-  if (forbidden) return forbidden;
-
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -83,38 +78,6 @@ export async function POST(req: NextRequest) {
   }
   if (!designation) {
     return NextResponse.json({ error: "La désignation est obligatoire." }, { status: 400 });
-  }
-
-  // Empêche le doublon lors d'une création manuelle : recherche dans les
-  // références principales ET alternatives (normalisées).
-  const normalizedTokens = tokens.map(normReference).filter(Boolean);
-  if (normalizedTokens.length) {
-    const dupRows = await db.execute(sql`
-      SELECT p.id, p.reference
-      FROM parts p
-      WHERE ${sql.join(
-        normalizedTokens.map(
-          (t) =>
-            sql`(lower(p.reference) = ${t} OR EXISTS (
-               SELECT 1 FROM part_references r
-               WHERE r.part_id = p.id AND lower(r.reference) = ${t}
-             ))`,
-        ),
-        sql` OR `,
-      )}
-      LIMIT 1
-    `);
-    const dup = (dupRows.rows as Array<{ id: number; reference: string }>)[0];
-    if (dup) {
-      return NextResponse.json(
-        {
-          error: `Cette référence existe déjà (pièce ${dup.reference}). Importez-la plutôt avec la stratégie de mise à jour.`,
-          code: "DUPLICATE",
-          partId: dup.id,
-        },
-        { status: 409 },
-      );
-    }
   }
 
   const num = (v: unknown): number => {

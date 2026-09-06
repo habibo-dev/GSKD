@@ -46,7 +46,7 @@ export default async function StockPage({
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Gestion du stock"
-        description="Niveaux de stock en temps réel calculés : Stock restant = Stock initial + Entrées − Sorties (ventes, sorties et ajustements)."
+        description="Niveaux de stock en temps réel calculés : Stock restant = Stock initial + Entrées − Sorties."
         actions={
           <>
             <a href="/api/export?type=stock-faible" className="btn btn-secondary btn-sm">Export stock faible</a>
@@ -146,14 +146,6 @@ export default async function StockPage({
                             partId={p.id}
                             reference={p.reference}
                             currentStock={Number(p.currentStock)}
-                            mode="sortie"
-                            defaultUser={cfg.defaultUser}
-                            className="btn btn-secondary btn-xs"
-                          />
-                          <AdjustStockButton
-                            partId={p.id}
-                            reference={p.reference}
-                            currentStock={Number(p.currentStock)}
                             mode="ajustement"
                             defaultUser={cfg.defaultUser}
                             className="btn btn-ghost btn-xs"
@@ -169,7 +161,7 @@ export default async function StockPage({
         )}
       </div>
       <p className="no-print mt-2 text-[11.5px] text-slate-400">
-        {formatInt(total)} pièce(s) affichée(s) — toute modification de stock passe par un mouvement tracé (Entrée, Vente, Retour, Sortie, Ajustement).
+        {formatInt(total)} pièce(s) affichée(s) — toute modification de stock passe par un mouvement tracé (Entrée, Vente, Retour, Ajustement).
       </p>
     </div>
   );

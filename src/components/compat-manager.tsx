@@ -67,20 +67,19 @@ export function CompatManager({
       .catch(() => undefined);
   }, [presetPartId]);
 
-  const term = q.trim();
-  const canSearch = term.length >= 2;
-
   useEffect(() => {
-    if (!canSearch) return;
+    const term = q.trim();
+    if (term.length < 2) {
+      setHits([]);
+      return;
+    }
     const t = setTimeout(async () => {
       const res = await fetch(`/api/search?q=${encodeURIComponent(term)}&limit=6`);
       const data = (await res.json()) as { results: Found[] };
       setHits(data.results);
     }, 170);
     return () => clearTimeout(t);
-  }, [canSearch, term]);
-
-  const visibleHits = canSearch ? hits : [];
+  }, [q]);
 
   const submit = async () => {
     if (!part || !vehicleId) {
@@ -130,8 +129,8 @@ export function CompatManager({
           Lier une pièce à un véhicule
         </h3>
         <p className="mb-3 rounded-lg bg-blue-50/70 p-2.5 text-[11.5px] leading-snug text-blue-900">
-          N&apos;ajoutez que des compatibilités fiables (données fournisseur,
-          constructeur ou montage réel). Aucune compatibilité n&apos;est déduite
+          N'ajoutez que des compatibilités fiables (données fournisseur,
+          constructeur ou montage réel). Aucune compatibilité n'est déduite
           automatiquement.
         </p>
 
@@ -158,9 +157,9 @@ export function CompatManager({
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            {visibleHits.length > 0 && (
+            {hits.length > 0 && (
               <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
-                {visibleHits.map((h) => (
+                {hits.map((h) => (
                   <button
                     key={h.id}
                     className="block w-full border-b border-slate-50 px-3 py-2 text-left last:border-0 hover:bg-blue-50/60"
@@ -190,7 +189,7 @@ export function CompatManager({
         </select>
         {vehicles.length === 0 && (
           <p className="mt-1 text-[11.5px] text-amber-700">
-            Aucun véhicule : ajoutez-en d&apos;abord dans « Véhicules ».
+            Aucun véhicule : ajoutez-en d'abord dans « Véhicules ».
           </p>
         )}
 

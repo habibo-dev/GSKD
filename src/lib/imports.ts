@@ -19,7 +19,7 @@ import {
   type ExtractedRow,
   type TargetField,
 } from "@/lib/excel";
-import { norm, normReference, splitReferences } from "@/lib/normalize";
+import { norm, splitReferences } from "@/lib/normalize";
 import { toNum } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
 
@@ -96,7 +96,7 @@ export async function validateRows(rows: ExtractedRow[]) {
     reference: string;
     designation: string;
   }>) {
-    const key = normReference(r.token);
+    const key = norm(r.token);
     if (!byToken.has(key)) {
       byToken.set(key, {
         id: r.id,
@@ -107,7 +107,6 @@ export async function validateRows(rows: ExtractedRow[]) {
   }
 
   const seenInFile = new Map<string, number>(); // jeton normalisé -> rowNumber
-  const seenIdx = new Map<string, number>(); // jeton normalisé -> index dans validated
   const validated: ValidatedRow[] = [];
 
   for (const row of rows) {
@@ -159,56 +158,25 @@ export async function validateRows(rows: ExtractedRow[]) {
 
     // Doublon dans le fichier ?
     let duplicateOf: number | null = null;
-    let firstIdx = -1;
     for (const t of tokens) {
-      const k = normReference(t);
+      const k = norm(t);
       const firstRow = seenInFile.get(k);
       if (firstRow !== undefined) {
         duplicateOf = firstRow;
-        firstIdx = seenIdx.get(k) ?? -1;
         break;
       }
     }
-
     if (duplicateOf !== null) {
-      const first = firstIdx >= 0 ? validated[firstIdx] : undefined;
-      // Deux lignes du fichier qui pointent vers le même jeton MAIS avec des
-      // données métier différentes : aucune n'est importée silencieusement.
-      const conflict =
-        !!first &&
-        (norm(first.designation) !== norm(row.designation) ||
-          norm(first.marque) !== norm(row.marque) ||
-          first.qty !== qty ||
-          first.pa !== pa ||
-          first.pg !== pg ||
-          first.pd !== pd);
-      if (conflict && first) {
-        first.status = "doublon_fichier";
-        first.issues.push({
-          level: "warning",
-          message: `Conflit avec la ligne ${row.rowNumber} : données différentes (${row.reference} / ${row.designation} / ${row.quantite})`,
-        });
-        status = "doublon_fichier";
-        issues.push({
-          level: "warning",
-          message: `Conflit avec la ligne ${first.rowNumber} : données différentes (${first.reference} / ${first.designation} / ${first.quantite})`,
-        });
-      } else {
-        status = "doublon_fichier";
-        issues.push({
-          level: "warning",
-          message: `Référence déjà présente (ligne ${duplicateOf})`,
-        });
-      }
+      status = "doublon_fichier";
+      issues.push({
+        level: "warning",
+        message: `Référence déjà présente (ligne ${duplicateOf})`,
+      });
     } else {
-      for (const t of tokens) {
-        const k = normReference(t);
-        seenInFile.set(k, row.rowNumber);
-        seenIdx.set(k, validated.length);
-      }
+      for (const t of tokens) seenInFile.set(norm(t), row.rowNumber);
       // Existant en base ?
       for (const t of tokens) {
-        const found = byToken.get(normReference(t));
+        const found = byToken.get(norm(t));
         if (found) {
           existingPart = found;
           break;
@@ -297,7 +265,7 @@ export async function executeImport(
   existingPolicy: "update" | "skip",
 ) {
   const cfg = await getSettings();
-  const rows = extractRows(buffer, sheetName, headerRow, mapping, filename);
+  const rows = extractRows(buffer, sheetName, headerRow, mapping);
   const { validated, summary } = await validateRows(rows);
 
   let created = 0;
@@ -365,9 +333,9 @@ export async function executeImport(
           .select()
           .from(partReferences)
           .where(eq(partReferences.partId, partId));
-        const existingKeys = new Set(existingRefs.map((r) => normReference(r.reference)));
+        const existingKeys = new Set(existingRefs.map((r) => norm(r.reference)));
         for (const token of row.tokens) {
-          if (!existingKeys.has(normReference(token))) {
+          if (!existingKeys.has(norm(token))) {
             await tx.insert(partReferences).values({
               partId,
               reference: token,
