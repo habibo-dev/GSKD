@@ -28,6 +28,7 @@ import {
   Camera,
 } from "lucide-react";
 import { stockStatusLabel, STATUS_BADGE } from "@/lib/status-ui";
+import { AuthStatus } from "@/components/auth-status";
 
 type NavItem = {
   href: string;
@@ -350,6 +351,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </h1>
           <div className="flex-1">
             <GlobalSearch />
+          </div>
+          <div className="hidden lg:block">
+            <AuthStatus />
           </div>
           <Link href="/ventes/nouvelle" className="btn btn-primary btn-sm no-print">
             <ShoppingCart size={14} />

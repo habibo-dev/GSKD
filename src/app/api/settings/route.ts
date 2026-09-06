@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, saveSettings } from "@/lib/settings";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,9 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -25,6 +29,7 @@ export async function PATCH(req: NextRequest) {
     allowNegativeStock: Boolean(body.allowNegativeStock),
     defaultUser: String(body.defaultUser ?? "").trim().slice(0, 60) || undefined,
     cataloguePrice: body.cataloguePrice === "gros" ? "gros" : "detail",
+    authEnabled: Boolean(body.authEnabled),
   });
   return NextResponse.json({ ok: true });
 }

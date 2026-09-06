@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { savePartImage, deletePartImage } from "@/lib/images";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, ctx: Ctx) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id)) {
     return NextResponse.json({ error: "ID invalide" }, { status: 400 });
@@ -26,7 +30,10 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   }
 }
 
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id)) {
     return NextResponse.json({ error: "ID invalide" }, { status: 400 });

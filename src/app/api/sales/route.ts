@@ -9,6 +9,16 @@ export async function GET() {
   return NextResponse.json({ sales: rows });
 }
 
+export async function PATCH() {
+  return NextResponse.json(
+    {
+      error: "Annulation de vente non disponible : utilisez un mouvement de réapprovisionnement ou de correction explicite pour préserver l'audit.",
+      code: "NOT_IMPLEMENTED",
+    },
+    { status: 400 },
+  );
+}
+
 export async function POST(req: NextRequest) {
   let body: {
     clientName?: string;

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { parts, partReferences, brands, categories, suppliers } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { splitReferences, norm } from "@/lib/normalize";
+import { splitReferences, norm, normReference } from "@/lib/normalize";
 import { deletePartImage } from "@/lib/images";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,9 @@ const num = (v: unknown, fallback: number | null = null): string | null => {
 };
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id)) return NextResponse.json({ error: "ID invalide" }, { status: 400 });
 
@@ -91,9 +95,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   // Synchronise les références (conserve l'historique des jetons existants)
   const refs = await db.select().from(partReferences).where(eq(partReferences.partId, id));
-  const existingKeys = new Set(refs.map((r) => norm(r.reference)));
+  const existingKeys = new Set(refs.map((r) => normReference(r.reference)));
   for (const [i, token] of tokens.entries()) {
-    if (!existingKeys.has(norm(token))) {
+    if (!existingKeys.has(normReference(token))) {
       await db.insert(partReferences).values({ partId: id, reference: token, isPrimary: i === 0 && !refs.some((r) => r.isPrimary) });
     }
   }
@@ -101,7 +105,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
+
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id)) return NextResponse.json({ error: "ID invalide" }, { status: 400 });
   const [existing] = await db.select().from(parts).where(eq(parts.id, id));

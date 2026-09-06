@@ -7,6 +7,7 @@ import {
   validateRows,
   executeImport,
 } from "@/lib/imports";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,8 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   if (badParams(step)) {
     return NextResponse.json({ error: "Étape inconnue." }, { status: 404 });
   }
+  const forbidden = await requireAdmin(req);
+  if (forbidden) return forbidden;
 
   // Étape 1 : téléversement + analyse du classeur
   if (step === "preview") {

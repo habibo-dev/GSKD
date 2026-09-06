@@ -14,6 +14,7 @@ type Settings = {
   allowNegativeStock: boolean;
   defaultUser: string;
   cataloguePrice: "detail" | "gros";
+  authEnabled: boolean;
 };
 
 export function SettingsForm({ initial }: { initial: Settings }) {
@@ -130,6 +131,17 @@ export function SettingsForm({ initial }: { initial: Settings }) {
                 <span className="block text-[11.5px] leading-snug text-slate-500">
                   Par défaut, vendre plus que le stock disponible est bloqué. Activez
                   uniquement si votre pratique l&apos;exige (déconseillé).
+                </span>
+              </span>
+            </label>
+            <label className="col-span-2 flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 p-3">
+              <input type="checkbox" className="mt-0.5" checked={form.authEnabled} onChange={(e) => setForm({ ...form, authEnabled: e.target.checked })} />
+              <span>
+                <span className="block text-[13px] font-bold text-slate-800">Sécurité multi-utilisateurs (Admin / Employé)</span>
+                <span className="block text-[11.5px] leading-snug text-slate-500">
+                  Si activée, les modifications sensibles (prix, import, ajustements,
+                  suppression, paramètres) nécessitent une session administrateur.
+                  Compte initial admin/admin (à changer en production via AUTH_SECRET/DATABASE).
                 </span>
               </span>
             </label>

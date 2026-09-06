@@ -85,7 +85,15 @@ Toutes les pages/API principales :
 - Tester « 7703800107 / 8200651172 » comme **une seule pièce recherchable par l'une ou l'autre référence**.
 - AUCUNE données de compatibilité véhicule ne doit être inventée ; il n'y en a pas dans les fichiers fournis (à confirmer).
 
-### 2. Ajouté / renforcé dans cette passe (pipeline « sortie » + recherche + extraction PDF)
+### 2. Ajouté / renforcé dans cette passe (sécurité + import + pipeline PDF)
+
+- ✅ **Authentification réelle mais optionnelle** (`src/lib/auth.ts`) : cookie HTTP-only signé (HMAC-SHA256), rôles `admin` / `employé`, activation via `Paramètres → sécurité`. Les opérations sensibles (`import`, `ajustement stock`, `suppression`, `modification prix`, `paramètres`, `image`) exigent une session admin **si la sécurité est activée**. Compte initial `admin/admin` (à changer via env en production).
+- ✅ **Protection anti-doublon à la création manuelle** (`/api/parts`) : recherche par référence principale et alternative normalisée avant insertion, retour `409 DUPLICATE`.
+- ✅ **Index de recherche normalisés** : `lower(reference)` sur `parts` et `part_references`, index composite `stock_movements(part_id, created_at)`.
+- ✅ **Route d'import CSV direct** (`/api/import/csv`) réutilisant le même pipeline de validation/upsert (utile pour les imports scriptés et tests d'acceptation).
+- ✅ **Page de connexion** `/login` + indicateur d'état d'authentification dans le header (`AuthStatus`).
+
+### 3. Ajouté / renforcé dans cette passe (pipeline « sortie » + recherche + extraction PDF)
 - ✅ Nouveau type de mouvement **`SORTIE`** (sortie de magasin, distincte de la vente) :
   - `src/lib/movements.ts`, `src/lib/format.ts`, `src/lib/export.ts`, `/api/movements`, badge UI, bouton « Sortie » sur Stock et fiche produit.
 - ✅ Recherche **compatibilité véhicule** (`Clio`, `1.5 dCi`, `Peugeot`, etc.) via `compatibilities`/`vehicles`.
