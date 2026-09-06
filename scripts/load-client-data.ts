@@ -8,7 +8,8 @@
 // mise à jour avec traçabilité des stocks). Aucune donnée n'est inventée.
 //
 // Usage :
-//   DATABASE_URL=... npm run data:load
+//   DATABASE_URL=... npm run data:load              (tous les fichiers data/)
+//   DATABASE_URL=... npm run data:load -- --file=Liste-des-Articles
 // ---------------------------------------------------------------------------
 
 import { promises as fs } from "fs";
@@ -19,6 +20,12 @@ import { executeImport } from "@/lib/imports";
 const DATA_DIR = path.join(process.cwd(), "data");
 const EXTENSIONS = [".csv", ".xlsx", ".xls", ".xlsm", ".xlsb"];
 
+function requestedFile(): string | null {
+  const hit = process.argv.find((a) => a.startsWith("--file="));
+  const value = hit ? hit.slice("--file=".length) : null;
+  return value ?? null;
+}
+
 async function main() {
   let entries: string[];
   try {
@@ -28,14 +35,18 @@ async function main() {
     process.exit(1);
   }
 
+  const only = requestedFile();
   const files = entries
     .filter((f) => EXTENSIONS.includes(path.extname(f).toLowerCase()))
+    .filter((f) => !only || f.includes(only))
     .sort();
   if (!files.length) {
-    console.log(
-      `Aucun fichier client dans ${DATA_DIR}. Placez-y les CSV/Excel réels puis relancez \`npm run data:load\`.`,
+    console.error(
+      only
+        ? `Aucun fichier client correspondant à « ${only} » dans ${DATA_DIR}.`
+        : `Aucun fichier client dans ${DATA_DIR}. Placez-y les CSV/Excel réels puis relancez \`npm run data:load\`.`,
     );
-    process.exit(0);
+    process.exit(1);
   }
 
   let created = 0;

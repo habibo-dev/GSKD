@@ -16,6 +16,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@napi-rs/canvas": "^1.0.8",
+    "@tesseract.js-data/fra": "^1.0.0",
     "dotenv": "17.3.1",
     "drizzle-orm": "0.45.2",
     "lucide-react": "^1.41.0",

@@ -114,9 +114,11 @@ function parseArgs() {
 
 async function renderPages(buffer: Buffer, scale: number, maxPages: number) {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  // Le worker n'est pas nécessaire pour un rendu Node avec @napi-rs/canvas,
-  // mais on définit son chemin pour compatibilité avec anciennes versions.
-  pdfjs.GlobalWorkerOptions.workerSrc = "";
+  // Worker local : pdfjs-dist v6 refuse le rendu Node sans workerSrc.
+  pdfjs.GlobalWorkerOptions.workerSrc = path.join(
+    process.cwd(),
+    "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+  );
 
   const task = pdfjs.getDocument({ data: new Uint8Array(buffer) });
   const doc = (await task.promise) as PDFDocumentProxy;
@@ -150,7 +152,12 @@ async function renderPages(buffer: Buffer, scale: number, maxPages: number) {
 
 async function ocrPage(image: Buffer, width: number, height: number): Promise<WordBox[]> {
   const tesseract = await import("tesseract.js");
-  const worker = await tesseract.createWorker("fra");
+  const fra = await import("@tesseract.js-data/fra").then((m) => m.default ?? m);
+  const worker = await tesseract.createWorker("fra", 1, {
+    langPath: fra.langPath,
+    gzip: true,
+    cacheMethod: "none",
+  });
   try {
     const { data } = await worker.recognize(image, {}, { blocks: true });
     const words: WordBox[] = [];

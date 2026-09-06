@@ -19,6 +19,7 @@ data/*.pdf
 data/*.csv
 data/*.zip
 data/tmp/
+data/pdf-extract/
 
 # logs
 *.log
