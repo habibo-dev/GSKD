@@ -2,7 +2,7 @@
 
 Date : 2026-09-06
 Branche : `arena/01a076c2-gskd`
-Dernier commit : `b46d346`
+Dernier commit : `e6d3b61`
 
 ---
 
@@ -40,7 +40,7 @@ réelles » :
 ## 3. Dernier commit / branche
 
 - Branch : `arena/01a076c2-gskd`
-- Latest commit : `b46d346`
+- Latest commit : `e6d3b61`
 - Message : `Add FINAL_HANDOFF.md with production status and next-agent handoff`
   (commit précécent contenant le code : `85b684e`)
 
@@ -345,4 +345,4 @@ DATABASE_URL=postgres://... npm run pdf:extract -- "data/ArticlePVPhoto.pdf 13 0
 **Production URL** : aucune (BLOCKED).
 **Repo** : `https://github.com/habibo-dev/GSKD`
 **Branche** : `arena/01a076c2-gskd`
-**Dernier commit** : `b46d346`
+**Dernier commit** : `e6d3b61`
