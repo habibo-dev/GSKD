@@ -1,5 +1,11 @@
 # Extraction du catalogue PDF (produits + photos)
 
+## Note Import Excel / CSV
+
+L'application gère maintenant `.xls`, `.xlsx`, `.xlsm`, `.xlsb` **et `.csv`**.
+Le CSV converti depuis l'inventaire `.xls` peut donc être importé via
+`Import / Export` → Import Excel en le déposant directement.
+
 ## Principe
 
 Le script `extract-pdf-catalogue.ts` est volontairement prudent :

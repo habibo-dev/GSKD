@@ -34,19 +34,19 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (file.size > MAX_SIZE) {
       return NextResponse.json({ error: "Fichier trop volumineux (15 Mo max)." }, { status: 400 });
     }
-    if (!/\.(xlsx?|xlsm|xlsb)$/i.test(file.name)) {
+    if (!/\.(xlsx?|xlsm|xlsb|csv)$/i.test(file.name)) {
       return NextResponse.json(
-        { error: "Format non pris en charge : utilisez un classeur .xls ou .xlsx." },
+        { error: "Format non pris en charge : utilisez un classeur .xls / .xlsx ou un fichier .csv." },
         { status: 400 },
       );
     }
     const buffer = Buffer.from(await file.arrayBuffer());
     let sheets;
     try {
-      sheets = analyzeWorkbook(buffer);
+      sheets = analyzeWorkbook(buffer, file.name);
     } catch {
       return NextResponse.json(
-        { error: "Impossible de lire ce classeur. Vérifiez qu'il s'agit bien d'un fichier Excel." },
+        { error: "Impossible de lire ce classeur. Vérifiez qu'il s'agit bien d'un fichier Excel ou CSV." },
         { status: 400 },
       );
     }
@@ -93,7 +93,13 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   }
 
   if (step === "validate") {
-    const rows = extractRows(stored.buffer, body.sheet, body.headerRow, body.mapping);
+    const rows = extractRows(
+      stored.buffer,
+      body.sheet,
+      body.headerRow,
+      body.mapping,
+      stored.filename,
+    );
     const { validated, summary } = await validateRows(rows);
     const problemRows = validated
       .filter((r) => r.status !== "ok")

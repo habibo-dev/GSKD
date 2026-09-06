@@ -265,7 +265,7 @@ export async function executeImport(
   existingPolicy: "update" | "skip",
 ) {
   const cfg = await getSettings();
-  const rows = extractRows(buffer, sheetName, headerRow, mapping);
+  const rows = extractRows(buffer, sheetName, headerRow, mapping, filename);
   const { validated, summary } = await validateRows(rows);
 
   let created = 0;

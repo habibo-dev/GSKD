@@ -214,18 +214,18 @@ export function ImportWizard() {
               {busy ? "Analyse du classeur…" : "Déposez votre fichier Excel d'inventaire"}
             </h3>
             <p className="mx-auto mt-1 max-w-md text-[12.5px] leading-relaxed text-slate-500">
-              Formats .xls / .xlsx — les colonnes attendues sont
+              Formats .xls / .xlsx / .csv — les colonnes attendues sont
               Référence, Désignation, Marque, Quantité, Prix d&apos;Achat, Prix Gros,
               Prix Détail, UM, Rayon. Les références multiples
               (« 7703800107 / 8200651172 ») sont prises en charge.
             </p>
             <button className="btn btn-primary mt-4" disabled={busy} onClick={() => fileRef.current?.click()}>
-              <Upload size={14} /> Choisir le fichier Excel
+              <Upload size={14} /> Choisir le fichier Excel / CSV
             </button>
             <input
               ref={fileRef}
               type="file"
-              accept=".xls,.xlsx,.xlsm,.xlsb"
+              accept=".xls,.xlsx,.xlsm,.xlsb,.csv"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];

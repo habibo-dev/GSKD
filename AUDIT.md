@@ -91,6 +91,7 @@ Toutes les pages/API principales :
 - ✅ Recherche **compatibilité véhicule** (`Clio`, `1.5 dCi`, `Peugeot`, etc.) via `compatibilities`/`vehicles`.
 - ✅ Normalisation des références (`normReference`) pour comparer `7703800107` vs `.7703800107`, espaces, tirets, slash.
 - ✅ Import : les doublons / existants sont désormais comparés sur la référence **normalisée** (plus robuste face aux points de tête, espaces, casse).
+- ✅ **Import CSV** : le pipeline d'import prend désormais en charge `.csv` en plus de `.xls/.xlsx/.xlsm/.xlsb` (nécessaire car le client a fourni un CSV converti depuis le `.xls`). Encodage UTF-8 / Latin-1 et séparateurs `;` / `,` gérés via `xlsx`.
 - ✅ **Outillage d'extraction du catalogue PDF** (`scripts/extract-pdf-catalogue.ts`) :
   - Rendu des pages via `pdfjs-dist` + `@napi-rs/canvas`.
   - OCR local (`tesseract.js`) pour retrouver les lignes.
