@@ -2,8 +2,8 @@
 
 Date : 2026-09-06
 Branche : `arena/01a076c2-gskd`
-Dernier commit : `12e5851` (« Update FINAL_HANDOFF … »)
-Commit de code final correspondant : `3925659`
+Commit de code final : `3925659`
+Dernier commit de la branche : voir `git log --oneline -1` (ce fichier de handoff y est inclus)
 
 ---
 
