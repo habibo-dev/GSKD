@@ -6,6 +6,7 @@ import { getSettings } from "@/lib/settings";
 import { formatQty, formatInt, stockStatusOf, type StockStatus } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
 import { PageHeader, PartThumb, StockBadge, EmptyState } from "@/components/ui";
+import { PdfExportMenu } from "@/components/pdf-export-menu";
 import { AdjustStockButton } from "@/components/adjust-stock-dialog";
 import { ShoppingCart } from "lucide-react";
 
@@ -52,6 +53,7 @@ export default async function StockPage({
             <a href="/api/export?type=stock-faible" className="btn btn-secondary btn-sm">Export stock faible</a>
             <a href="/api/export?type=ruptures" className="btn btn-secondary btn-sm">Export ruptures</a>
             <a href="/api/export?type=stock" className="btn btn-secondary btn-sm">Export complet</a>
+            <PdfExportMenu scope="stock" params={sp} />
           </>
         }
       />

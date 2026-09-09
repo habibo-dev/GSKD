@@ -117,7 +117,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   const [existing] = await db.select().from(parts).where(eq(parts.id, id));
   if (!existing) return NextResponse.json({ error: "Pièce introuvable" }, { status: 404 });
 
-  await deletePartImage(id); // supprime le fichier + la ligne image
+  await deletePartImage(id); // retire la ligne image (l'historique cascade avec la pièce)
   await db.delete(parts).where(eq(parts.id, id)); // cascade : références, compatibilités
   return NextResponse.json({ ok: true });
 }

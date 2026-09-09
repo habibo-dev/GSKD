@@ -89,6 +89,29 @@ CREATE TABLE IF NOT EXISTS images (
   updated_at timestamp NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS image_versions (
+  id serial PRIMARY KEY,
+  part_id integer NOT NULL REFERENCES parts(id) ON DELETE CASCADE,
+  version_no integer NOT NULL DEFAULT 1,
+  filename text NOT NULL,
+  original_name text,
+  mime text,
+  size integer,
+  source text NOT NULL DEFAULT 'upload',
+  token text,
+  source_rel text,
+  pdf_page integer,
+  pdf_reference text,
+  confidence text,
+  note text,
+  is_current boolean NOT NULL DEFAULT false,
+  created_at timestamp NOT NULL DEFAULT now()
+);
+
+ALTER TABLE image_versions ADD COLUMN IF NOT EXISTS pdf_page integer;
+ALTER TABLE image_versions ADD COLUMN IF NOT EXISTS pdf_reference text;
+ALTER TABLE image_versions ADD COLUMN IF NOT EXISTS confidence text;
+
 CREATE TABLE IF NOT EXISTS sales (
   id serial PRIMARY KEY,
   number text,
@@ -185,6 +208,17 @@ CREATE INDEX IF NOT EXISTS compat_part_idx ON compatibilities(part_id);
 CREATE INDEX IF NOT EXISTS compat_vehicle_idx ON compatibilities(vehicle_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_idx ON users(lower(username));
+
+CREATE UNIQUE INDEX IF NOT EXISTS image_versions_part_version_idx ON image_versions(part_id, version_no);
+CREATE INDEX IF NOT EXISTS image_versions_part_idx ON image_versions(part_id);
+
+-- Rétro-compatibilité : archive l'image canonique existante comme « version 1 »
+-- afin qu'aucune image déjà en place ne soit perdue (idempotent).
+INSERT INTO image_versions (part_id, version_no, filename, original_name, mime, size, source, is_current)
+SELECT i.part_id, 1, i.filename, i.original_name, i.mime, i.size,
+       CASE WHEN i.filename LIKE 'demo-%' THEN 'seed' ELSE 'import' END, true
+FROM images i
+WHERE NOT EXISTS (SELECT 1 FROM image_versions v WHERE v.part_id = i.part_id);
 `;
 
 export async function ensureSchema(): Promise<void> {

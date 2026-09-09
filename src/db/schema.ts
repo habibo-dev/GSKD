@@ -7,6 +7,7 @@ import {
   boolean,
   timestamp,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
@@ -151,6 +152,9 @@ export const partReferences = pgTable(
 
 // ---------------------------------------------------------------------------
 // Images produits — UNE image canonique par pièce, réutilisée partout
+// La table `images` ne contient QUE l'image actuellement courante. Les
+// remplacements successifs sont archivés dans `image_versions` (fichier
+// conservé sur disque), ce qui rend l'ensemble du flux entièrement réversible.
 // ---------------------------------------------------------------------------
 export const images = pgTable("images", {
   id: serial("id").primaryKey(),
@@ -169,6 +173,46 @@ export const images = pgTable("images", {
     .notNull()
     .defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// Historique / provenance des images produits (réversibilité).
+// Chaque version correspond à un fichier sur disque qui n'est JAMAIS écrasé ni
+// supprimé immédiatement : on peut restaurer n'importe quelle photo antérieure.
+// source : 'upload' | 'pdf_extract' | 'seed' | 'restore' | 'import'
+// ---------------------------------------------------------------------------
+export const imageVersions = pgTable(
+  "image_versions",
+  {
+    id: serial("id").primaryKey(),
+    partId: integer("part_id")
+      .notNull()
+      .references(() => parts.id, { onDelete: "cascade" }),
+    // Numéro de version de la pièce (1, 2, 3, …) — unique par pièce.
+    versionNo: integer("version_no").notNull().default(1),
+    filename: text("filename").notNull(),
+    originalName: text("original_name"),
+    mime: text("mime"),
+    size: integer("size"),
+    source: text("source").notNull().default("upload"),
+    // Provenance d'une photo issue du catalogue PDF.
+    token: text("token"),
+    sourceRel: text("source_rel"),
+    // Provenance catalogue détaillée : page du PDF, référence lue/associée,
+    // confiance de l'appariement lors de la sauvegarde.
+    pdfPage: integer("pdf_page"),
+    pdfReference: text("pdf_reference"),
+    confidence: text("confidence"),
+    note: text("note"),
+    isCurrent: boolean("is_current").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("image_versions_part_idx").on(t.partId),
+    uniqueIndex("image_versions_part_version_idx").on(t.partId, t.versionNo),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // Ventes

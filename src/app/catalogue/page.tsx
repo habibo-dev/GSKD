@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/settings";
 import { formatDZD, formatDate, stockStatusOf, type StockStatus } from "@/lib/format";
 import { imageUrl } from "@/lib/images";
 import { PrintButton } from "@/components/print-button";
+import { PdfExportMenu } from "@/components/pdf-export-menu";
 import { BookOpen } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -55,10 +56,11 @@ export default async function CataloguePage({
             {total} article{total > 1 ? "s" : ""} · Édition du {formatDate(new Date())} · Présentable aux clients (aucun prix d&apos;achat affiché)
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <a className="btn btn-secondary" href={`/api/export?${exportParams.toString()}`}>
             Exporter Excel
           </a>
+          <PdfExportMenu scope="catalogue" params={sp} />
           <PrintButton />
         </div>
       </div>

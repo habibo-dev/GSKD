@@ -58,6 +58,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     title: "Données",
     items: [
       { href: "/import-export", label: "Import / Export", icon: FileSpreadsheet },
+      { href: "/images", label: "Photos & PDF", icon: Camera },
       { href: "/rapports", label: "Rapports", icon: BarChart3 },
     ],
   },
@@ -87,6 +88,7 @@ const TITLES: Array<[RegExp, string]> = [
   [/^\/ventes/, "Ventes"],
   [/^\/mouvements/, "Mouvements de stock"],
   [/^\/import-export/, "Import / Export Excel"],
+  [/^\/images/, "Photos produits — Import PDF"],
   [/^\/rapports/, "Rapports"],
   [/^\/vehicules/, "Véhicules"],
   [/^\/compatibilite/, "Compatibilité pièces / véhicules"],

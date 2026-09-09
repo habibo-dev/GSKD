@@ -1,5 +1,8 @@
-import { FileDown, FileUp, History } from "lucide-react";
+import Link from "next/link";
+import { FileDown, FileUp, History, FileText, FileArchive } from "lucide-react";
 import { ImportWizard } from "@/components/import-wizard";
+import { PdfImport } from "@/components/pdf-import";
+import { PdfExportMenu } from "@/components/pdf-export-menu";
 import { PageHeader, EmptyState } from "@/components/ui";
 import { listImportBatches } from "@/lib/queries";
 import { formatDateTime, formatInt } from "@/lib/format";
@@ -19,6 +22,25 @@ const EXPORTS: Array<{
   { type: "mouvements", label: "Mouvements", description: "Journal complet d'audit des mouvements de stock." },
 ];
 
+// Exports PDF présentables aux clients — générés en fichier .pdf réel (pdf-lib),
+// avec les mêmes images canoniques que Pièces / Stock / Catalogue / Ventes.
+const PDF_EXPORTS: Array<{
+  scope: "catalogue" | "stock";
+  label: string;
+  description: string;
+}> = [
+  {
+    scope: "catalogue",
+    label: "Catalogue / Liste de prix",
+    description: "Référence, désignation, marque, prix de vente et photo — mise en page A4 propre.",
+  },
+  {
+    scope: "stock",
+    label: "État du stock au prix de vente",
+    description: "Référence, désignation, marque, prix de vente, stock restant et photo.",
+  },
+];
+
 export default async function ImportExportPage() {
   const batches = await listImportBatches();
 
@@ -35,6 +57,14 @@ export default async function ImportExportPage() {
             <FileUp size={15} className="text-emerald-600" /> Import Excel
           </h3>
           <ImportWizard />
+
+          <h3 className="mb-2 mt-6 flex items-center gap-2 text-[13px] font-bold text-slate-800">
+            <FileText size={15} className="text-rose-600" /> Import PDF (photos catalogue)
+            <Link href="/images" className="text-[11px] font-medium text-blue-700 hover:underline">
+              Ouvrir la page Photos &amp; PDF →
+            </Link>
+          </h3>
+          <PdfImport />
         </div>
 
         <div className="flex flex-col gap-4">
@@ -52,6 +82,23 @@ export default async function ImportExportPage() {
                   <a className="btn btn-secondary btn-xs shrink-0" href={`/api/export?type=${e.type}`}>
                     <FileDown size={12} /> .xlsx
                   </a>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="mb-2 flex items-center gap-2 text-[13px] font-bold text-slate-800">
+              <FileArchive size={15} className="text-rose-600" /> Export PDF
+            </h3>
+            <div className="card divide-y divide-slate-100">
+              {PDF_EXPORTS.map((e) => (
+                <div key={e.scope} className="flex items-center gap-3 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-bold text-slate-800">{e.label}</div>
+                    <div className="text-[11.5px] leading-snug text-slate-500">{e.description}</div>
+                  </div>
+                  <PdfExportMenu scope={e.scope} />
                 </div>
               ))}
             </div>
