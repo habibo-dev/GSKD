@@ -218,7 +218,7 @@ function ProductLightbox({
   );
 }
 
-export function PdfImport() {
+export function PdfImport({ blobUpload = false }: { blobUpload?: boolean }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -257,16 +257,57 @@ export function PdfImport() {
     if (inputRef.current) inputRef.current.value = "";
   };
 
+  // Téléversement direct vers Vercel Blob depuis le navigateur (évite de faire
+  // transiter un gros PDF par le corps d'une fonction serverless, limité à
+  // ~4,5 Mo sur Vercel). Active UNIQUEMENT quand BLOB_READ_WRITE_TOKEN existe ;
+  // sinon (dev / auto-hébergé) on garde le flux multipart historique.
+  const uploadPdfBlob = async (file: File): Promise<{ pathname: string } | null> => {
+    try {
+      const { upload } = await import("@vercel/blob/client");
+      const slug =
+        (file.name.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/\.pdf$/i, "") || "catalogue")
+          .slice(0, 80) || "catalogue";
+      const pathname = `pdf-import/uploads/${Date.now()}-${slug}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}.pdf`;
+      const blob = await upload(pathname, file, {
+        access: "private",
+        handleUploadUrl: "/api/pdf/upload",
+        contentType: "application/pdf",
+      });
+      return { pathname: blob.pathname };
+    } catch {
+      // Jeton refusé / Blob indisponible : on retombe sur le flux multipart.
+      return null;
+    }
+  };
+
   const runAnalyse = async (file: File) => {
     setFilename(file.name);
     setSize(file.size);
     setError(null);
     setSuccess(null);
     setPhase("busy");
-    const form = new FormData();
-    form.append("file", file);
     try {
-      const res = await fetch("/api/pdf/analyse", { method: "POST", body: form });
+      let res: Response;
+      if (blobUpload) {
+        const up = await uploadPdfBlob(file);
+        if (up) {
+          res = await fetch("/api/pdf/analyse", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pathname: up.pathname, filename: file.name }),
+          });
+        } else {
+          const form = new FormData();
+          form.append("file", file);
+          res = await fetch("/api/pdf/analyse", { method: "POST", body: form });
+        }
+      } else {
+        const form = new FormData();
+        form.append("file", file);
+        res = await fetch("/api/pdf/analyse", { method: "POST", body: form });
+      }
       const body = (await res.json()) as PdfData & { error?: string };
       if (!res.ok) {
         throw new Error(body.error ?? "Analyse impossible.");

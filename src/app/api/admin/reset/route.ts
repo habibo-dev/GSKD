@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
-import { PARTS_DIR } from "@/lib/images";
+import { storageDeletePrefix } from "@/lib/storage";
 import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -42,14 +40,8 @@ export async function POST(req: NextRequest) {
   for (const t of tables) {
     await db.execute(sql.raw(`DELETE FROM ${t}`));
   }
-  // Supprime les fichiers images téléversés
-  try {
-    const files = await fs.readdir(PARTS_DIR);
-    for (const f of files) {
-      await fs.rm(path.join(PARTS_DIR, f), { force: true });
-    }
-  } catch {
-    // dossier absent : rien à faire
-  }
+  // Purge les objets images / artefacts d'import du stockage (Blob en prod).
+  await storageDeletePrefix("parts");
+  await storageDeletePrefix("pdf-import");
   return NextResponse.json({ ok: true });
 }

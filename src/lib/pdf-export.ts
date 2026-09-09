@@ -1,5 +1,3 @@
-import { promises as fs } from "fs";
-import path from "path";
 import {
   PDFDocument,
   StandardFonts,
@@ -10,7 +8,8 @@ import {
 } from "pdf-lib";
 import { listParts, type PartFilters } from "@/lib/queries";
 import { getSettings, type AppSettings } from "@/lib/settings";
-import { PARTS_DIR } from "@/lib/images";
+import { partObjectKey } from "@/lib/images";
+import { storageRead } from "@/lib/storage";
 import { toNum } from "@/lib/format";
 
 // ---------------------------------------------------------------------------
@@ -97,7 +96,9 @@ async function loadRaw(
   filename: string,
 ): Promise<{ buffer: Buffer; kind: "png" | "jpg" | "webp" } | null> {
   try {
-    const buf = await fs.readFile(path.join(PARTS_DIR, filename));
+    const obj = await storageRead(partObjectKey(filename));
+    if (!obj) return null;
+    const buf = obj.data;
     const lower = filename.toLowerCase();
     if (lower.endsWith(".png")) return { buffer: buf, kind: "png" };
     if (lower.endsWith(".webp")) return { buffer: buf, kind: "webp" };

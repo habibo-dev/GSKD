@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { parts } from "@/db/schema";
-import { PDF_IMPORT_ROOT } from "@/lib/pdf";
+import { pdfArtifactKey } from "@/lib/pdf";
 import { applyPdfCrop } from "@/lib/images";
+import { storageRead } from "@/lib/storage";
 import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -44,8 +43,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const tokenDir = path.join(PDF_IMPORT_ROOT, token);
-
   let done = 0;
   const errors: Array<{ partId: number; message: string }> = [];
   const applied: Array<{ partId: number; reference: string; versionNo?: number }> = [];
@@ -66,14 +63,11 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const source = path.join(tokenDir, imageRel);
-    if (!source.startsWith(tokenDir + path.sep)) {
-      errors.push({ partId: a.partId, message: "Chemin invalide." });
-      continue;
-    }
     let data: Buffer;
     try {
-      data = await fs.readFile(source);
+      const obj = await storageRead(pdfArtifactKey(token, imageRel));
+      if (!obj) throw new Error("missing");
+      data = obj.data;
     } catch {
       errors.push({ partId: a.partId, message: "Découpe photo introuvable sur le serveur." });
       continue;

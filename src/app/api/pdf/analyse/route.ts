@@ -3,6 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { parts, images } from "@/db/schema";
 import { analysePdfFile, pdfFileUrl, type PdfRow } from "@/lib/pdf";
+import { storageRead, STORAGE_MODE } from "@/lib/storage";
 import { requireAdmin } from "@/lib/auth";
 import { normReference, splitReferences } from "@/lib/normalize";
 
@@ -84,36 +85,80 @@ export async function POST(req: NextRequest) {
   const forbidden = await requireAdmin(req);
   if (forbidden) return forbidden;
 
-  const form = await req.formData();
-  const file = form.get("file");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Aucun fichier PDF reçu." }, { status: 400 });
-  }
-  if (file.size === 0) {
-    return NextResponse.json({ error: "Le fichier PDF est vide." }, { status: 400 });
-  }
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "Fichier trop volumineux (60 Mo max)." }, { status: 400 });
-  }
-  if (!/\.pdf$/i.test(file.name) && file.type !== PDF_MIME) {
-    return NextResponse.json(
-      { error: "Format non pris en charge : sélectionnez un fichier PDF (.pdf)." },
-      { status: 400 },
-    );
-  }
-  if (file.type !== "" && file.type !== PDF_MIME && file.type !== "application/octet-stream") {
-    // Acceptation souple : certains navigateurs envoient un type vide pour .pdf.
-    return NextResponse.json(
-      { error: "Le fichier sélectionné n'est pas un PDF (type application/pdf requis)." },
-      { status: 400 },
-    );
+  const contentType = req.headers.get("content-type") ?? "";
+  let buffer: Buffer;
+  let displayName = "";
+
+  if (contentType.includes("application/json")) {
+    // Chemin « gros fichiers » : le PDF a déjà été téléversé DIRECTEMENT vers
+    // Vercel Blob par le navigateur (voir /api/pdf/upload) pour éviter la
+    // limite de corps serverless. Ici on ne transmet qu'une petite référence.
+    let body: { pathname?: string; filename?: string };
+    try {
+      body = (await req.json()) as { pathname?: string; filename?: string };
+    } catch {
+      return NextResponse.json({ error: "Corps JSON invalide." }, { status: 400 });
+    }
+    const pathname = (body.pathname ?? "").trim();
+    if (
+      !/^pdf-import\/uploads\/[A-Za-z0-9._-]+\.pdf$/i.test(pathname) ||
+      STORAGE_MODE !== "blob"
+    ) {
+      return NextResponse.json(
+        { error: "Référence de fichier invalide." },
+        { status: 400 },
+      );
+    }
+    const obj = await storageRead(pathname);
+    if (!obj) {
+      return NextResponse.json(
+        { error: "Fichier PDF introuvable dans le stockage." },
+        { status: 404 },
+      );
+    }
+    buffer = obj.data;
+    displayName =
+      (body.filename ?? "").trim() ||
+      pathname.split("/").pop() ||
+      "catalogue.pdf";
+  } else {
+    // Chemin historique (multipart) — flux local / auto-hébergé.
+    const form = await req.formData();
+    const file = form.get("file");
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "Aucun fichier PDF reçu." }, { status: 400 });
+    }
+    if (file.size === 0) {
+      return NextResponse.json({ error: "Le fichier PDF est vide." }, { status: 400 });
+    }
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: "Fichier trop volumineux (60 Mo max)." }, { status: 400 });
+    }
+    if (!/\.pdf$/i.test(file.name) && file.type !== PDF_MIME) {
+      return NextResponse.json(
+        { error: "Format non pris en charge : sélectionnez un fichier PDF (.pdf)." },
+        { status: 400 },
+      );
+    }
+    if (file.type !== "" && file.type !== PDF_MIME && file.type !== "application/octet-stream") {
+      // Acceptation souple : certains navigateurs envoient un type vide pour .pdf.
+      return NextResponse.json(
+        { error: "Le fichier sélectionné n'est pas un PDF (type application/pdf requis)." },
+        { status: 400 },
+      );
+    }
+    buffer = Buffer.from(await file.arrayBuffer());
+    displayName = file.name;
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  // Garde de sécurité indépendante du chemin d'entrée.
+  if (buffer.length > MAX_SIZE) {
+    return NextResponse.json({ error: "Fichier trop volumineux (60 Mo max)." }, { status: 400 });
+  }
 
   let result;
   try {
-    result = await analysePdfFile(buffer, file.name);
+    result = await analysePdfFile(buffer, displayName);
   } catch (err) {
     return NextResponse.json(
       {

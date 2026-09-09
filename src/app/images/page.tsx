@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { parts, images } from "@/db/schema";
 import { PageHeader, EmptyState, PartThumb } from "@/components/ui";
 import { PdfImport } from "@/components/pdf-import";
+import { STORAGE_MODE } from "@/lib/storage";
 import { formatInt } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +63,7 @@ export default async function ImagesPage() {
       </div>
 
       {/* Import PDF */}
-      <PdfImport />
+      <PdfImport blobUpload={STORAGE_MODE === "blob"} />
 
       {/* Pièces sans photo */}
       <div className="card mt-4 overflow-hidden">

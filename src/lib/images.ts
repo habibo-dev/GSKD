@@ -1,13 +1,12 @@
-import { promises as fs } from "fs";
-import path from "path";
 import crypto from "crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { images, imageVersions, parts } from "@/db/schema";
 import { safeFilename } from "@/lib/normalize";
 import { imageUrl } from "@/lib/img-url";
+import { STORAGE_MODE, PARTS_DIR, storageWrite, storageExists } from "@/lib/storage";
 
-export { imageUrl };
+export { imageUrl, STORAGE_MODE, PARTS_DIR };
 
 // ---------------------------------------------------------------------------
 // Gestion des images produits — UNE image canonique par pièce.
@@ -24,9 +23,6 @@ export { imageUrl };
 //  - `image_versions`  : journal immuable des versions + provenance.
 // ---------------------------------------------------------------------------
 
-export const UPLOADS_ROOT = path.join(process.cwd(), "uploads");
-export const PARTS_DIR = path.join(UPLOADS_ROOT, "parts");
-
 const MIME_EXT: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
@@ -35,8 +31,9 @@ const MIME_EXT: Record<string, string> = {
 };
 const MAX_SIZE = 8 * 1024 * 1024; // 8 Mo
 
-async function ensureDir() {
-  await fs.mkdir(PARTS_DIR, { recursive: true });
+/** Clé de stockage objet d'une image de pièce. */
+export function partObjectKey(filename: string): string {
+  return `parts/${filename}`;
 }
 
 export type ImageSource =
@@ -80,8 +77,6 @@ async function commitImageBuffer(
     throw new Error("Format non pris en charge (JPEG, PNG ou WebP requis).");
   }
 
-  await ensureDir();
-
   // Version(s) déjà archivées pour cette pièce.
   const existingVers = await db
     .select({ versionNo: imageVersions.versionNo })
@@ -123,7 +118,7 @@ async function commitImageBuffer(
   const rand = crypto.randomBytes(3).toString("hex");
   const filename = `${partId}-${safeFilename(part.reference)}-v${versionNo}-${rand}${ext}`;
 
-  await fs.writeFile(path.join(PARTS_DIR, filename), input.buffer);
+  await storageWrite(partObjectKey(filename), input.buffer, input.mime);
 
   const now = new Date();
   const originalName = input.originalName ?? filename;
@@ -326,11 +321,8 @@ export async function restorePartImageVersion(
       ),
     );
   if (!v) throw new Error("Version introuvable.");
-  await ensureDir();
-  // Le fichier de chaque version est conservé : on ne réécrit rien.
-  try {
-    await fs.access(path.join(PARTS_DIR, v.filename));
-  } catch {
+  // Le fichier/objet de chaque version est conservé : on ne réécrit rien.
+  if (!(await storageExists(partObjectKey(v.filename)))) {
     throw new Error("Le fichier de cette version n'est plus disponible.");
   }
 

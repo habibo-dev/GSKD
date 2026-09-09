@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-import { PDF_IMPORT_ROOT } from "@/lib/pdf";
+import { pdfArtifactKey } from "@/lib/pdf";
+import { storageRead } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -32,16 +31,15 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     }
   }
   const rel = segments.join("/");
-  const full = path.join(PDF_IMPORT_ROOT, token, rel);
-  if (!full.startsWith(path.join(PDF_IMPORT_ROOT, token) + path.sep)) {
-    return NextResponse.json({ error: "Chemin invalide." }, { status: 400 });
-  }
   try {
-    const data = await fs.readFile(full);
-    const ext = path.extname(full).toLowerCase();
-    return new NextResponse(new Uint8Array(data), {
+    const obj = await storageRead(pdfArtifactKey(token, rel));
+    if (!obj) {
+      return NextResponse.json({ error: "Fichier introuvable." }, { status: 404 });
+    }
+    const ext = "." + rel.split(".").pop();
+    return new NextResponse(new Uint8Array(obj.data), {
       headers: {
-        "Content-Type": MIME[ext] ?? "application/octet-stream",
+        "Content-Type": obj.mime || MIME[ext] || "application/octet-stream",
         "Cache-Control": "public, max-age=3600, immutable",
       },
     });

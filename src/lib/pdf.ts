@@ -18,16 +18,18 @@
 //   4. Aucune association définitive n'est faite : chaque ligne reste en
 //      « manual_review » tant que l'utilisateur ne l'a pas confirmée.
 //
-// Sorties écrites sous uploads/pdf-import/<token>/ :
+// Sorties écrites dans le stockage objet sous pdf-import/<token>/ :
 //   original.pdf
 //   pages/page-XX.png        (aperçu de la page, pour la galerie)
 //   crops/page-XX/row-YY.png (photo produit de la ligne YY de la page XX)
 // ---------------------------------------------------------------------------
 
-import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { createCanvas, type Canvas } from "@napi-rs/canvas";
+import { PDF_IMPORT_ROOT, storageWrite } from "@/lib/storage";
+
+export { PDF_IMPORT_ROOT };
 
 export type PdfPageImage = { pageNo: number; rel: string };
 
@@ -62,7 +64,10 @@ export type AnalysePdfOptions = {
   onProgress?: (message: string) => void;
 };
 
-export const PDF_IMPORT_ROOT = path.join(process.cwd(), "uploads", "pdf-import");
+/** Clé de stockage objet d'un artefact d'import PDF (sous pdf-import/<token>). */
+export function pdfArtifactKey(token: string, rel: string): string {
+  return `pdf-import/${token}/${rel.replace(/\\\\/g, "/").replace(/^\//, "")}`;
+}
 
 /** URL publique (pure) d'un artefact généré par l'analyse (page ou découpe). */
 export function pdfFileUrl(token: string, rel: string): string {
@@ -292,10 +297,9 @@ export async function analysePdfFile(
   const onProgress = options.onProgress;
 
   const token = crypto.randomUUID();
-  const dir = path.join(PDF_IMPORT_ROOT, token);
-  await fs.mkdir(path.join(dir, "pages"), { recursive: true });
-  await fs.mkdir(path.join(dir, "crops"), { recursive: true });
-  await fs.writeFile(path.join(dir, "original.pdf"), buffer);
+  // Le PDF source est stocké en objet (Blob en prod, uploads/ en dev). Il est
+  // nécessaire jusqu'à la validation : on le conserve sous pdf-import/<token>.
+  await storageWrite(pdfArtifactKey(token, "original.pdf"), buffer, "application/pdf");
 
   const doc = await openDocument(buffer);
   const total = doc.numPages;
@@ -330,7 +334,7 @@ export async function analysePdfFile(
 
       // Aperçu de la page pour la galerie.
       const pageRel = `pages/page-${String(pn).padStart(2, "0")}.png`;
-      await fs.writeFile(path.join(dir, pageRel), pagePreviewPng(canvas));
+      await storageWrite(pdfArtifactKey(token, pageRel), pagePreviewPng(canvas), "image/png");
       pageRels.push({ pageNo: pn, rel: pageRel });
 
       // Trie les photos par position verticale = ordre des lignes.
@@ -344,9 +348,7 @@ export async function analysePdfFile(
         const rel = `crops/page-${String(pn).padStart(2, "0")}/row-${String(
           ri + 1,
         ).padStart(2, "0")}.png`;
-        const dir2 = path.dirname(path.join(dir, rel));
-        await fs.mkdir(dir2, { recursive: true });
-        await fs.writeFile(path.join(dir, rel), cropCanvas(canvas, a));
+        await storageWrite(pdfArtifactKey(token, rel), cropCanvas(canvas, a), "image/png");
         const imageRel = rel;
 
         // Texte de la MÊME bande de ligne que la photo (hors en-tête).

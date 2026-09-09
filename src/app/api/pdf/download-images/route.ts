@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
 import { eq, inArray } from "drizzle-orm";
 import JSZip from "jszip";
 import { db } from "@/db";
 import { images, parts } from "@/db/schema";
-import { PARTS_DIR } from "@/lib/images";
+import { partObjectKey } from "@/lib/images";
+import { storageRead } from "@/lib/storage";
 import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +16,8 @@ function safeRef(ref: string): string {
 }
 
 function extFor(filename: string): string {
-  const e = path.extname(filename).toLowerCase();
+  const dot = String(filename).lastIndexOf(".");
+  const e = (dot >= 0 ? filename.slice(dot) : "").toLowerCase();
   return e === ".jpg" || e === ".jpeg" || e === ".png" || e === ".webp" ? e : ".png";
 }
 
@@ -56,7 +56,9 @@ export async function GET(req: NextRequest) {
     if (!rec) continue;
     let data: Buffer;
     try {
-      data = await fs.readFile(path.join(PARTS_DIR, rec.filename));
+      const obj = await storageRead(partObjectKey(rec.filename));
+      if (!obj) throw new Error("missing");
+      data = obj.data;
     } catch {
       continue;
     }
